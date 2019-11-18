@@ -15,6 +15,12 @@ var One = new(Integer).SetInt64(1)
 // Zero as an arbitrary precision integer
 var Zero = new(Integer).SetInt64(0)
 
+// Cmp compars two numbers returns 0 if equal , -1 if the first lesser than the
+// second and 1 otherwise.
+func Cmp(a, b *Integer) int {
+	return a.Cmp(b)
+}
+
 // Add sums two Integers
 func Add(a, b *Integer) *Integer {
 
@@ -121,9 +127,9 @@ func IsPrime(p *Integer) bool {
 func XGCD2(a, b *Integer) (d, x, y *Integer) {
 
 	if b.Cmp(Zero) == 0 {
-		d.Set(a)
-		x.Set(One)
-		y.Set(Zero)
+		d = a
+		x = One
+		y = Zero
 	}
 
 	var x2 = new(big.Int).Set(One)
