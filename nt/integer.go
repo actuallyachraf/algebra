@@ -21,6 +21,11 @@ func Cmp(a, b *Integer) int {
 	return a.Cmp(b)
 }
 
+// FromInt64 returns an Integer from int64
+func FromInt64(x int64) *Integer {
+	return new(Integer).SetInt64(x)
+}
+
 // Add sums two Integers
 func Add(a, b *Integer) *Integer {
 

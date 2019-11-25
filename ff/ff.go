@@ -5,6 +5,7 @@ package ff
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/actuallyachraf/algebra/nt"
@@ -74,6 +75,12 @@ type FieldElement struct {
 	p FiniteField
 }
 
+// String implements stringer
+func (fe *FieldElement) String() string {
+
+	return fmt.Sprintf("%v in F/%v", fe.n, fe.p.q)
+}
+
 // New takes a number and the field's order
 func New(n, p *nt.Integer) (FieldElement, error) {
 	var z = FieldElement{
@@ -90,6 +97,11 @@ func New(n, p *nt.Integer) (FieldElement, error) {
 // NewFieldElement returns a new field eleemnt
 func (ff FiniteField) NewFieldElement(x *nt.Integer) FieldElement {
 	return FieldElement{x, ff}
+}
+
+// newFieldElementFromInt64 takes int64 params
+func (ff FiniteField) newFieldElementFromInt64(x int64) FieldElement {
+	return FieldElement{nt.FromInt64(x), ff}
 }
 
 // Double compues 2*fe
