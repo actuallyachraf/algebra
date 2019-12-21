@@ -8,7 +8,7 @@
 - [Pairings For Cryptographers](https://eprint.iacr.org/2006/165)
 - [Implementing Pairing Based Cryptography](https://crypto.stanford.edu/pbc/thesis.pdf)
 
-## Roadmap
+## WIP
 
 - ~~Implement operations on arbitrary precision integers and tests.~~
 - ~~Implement finite field elements.~~

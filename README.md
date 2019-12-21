@@ -4,7 +4,7 @@ This is a small library I write as a parallel of studying algebra
 and number theory related to cryptography it's not suitable for production usage
 and I doubt it will ever will.
 
-It aims to be literate the code is written to be understood by humans.
+It aims to be literate.
 
 It's a **WIP** and might take time to be finished.
 
