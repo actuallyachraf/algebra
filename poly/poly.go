@@ -96,13 +96,13 @@ func Add(p, q *Polynomial) *Polynomial {
 	// the degree of r is the max(deg(p),deg(q))
 	d := int(math.Max(float64(m), float64(n)))
 
-	r := make([]ff.FieldElement, d)
+	r := make([]ff.FieldElement, d+1)
 
 	copy(r, p.poly)
 
 	field := p.poly[0].Field()
 
-	for idx := 0; idx < n; idx++ {
+	for idx := 0; idx <= d; idx++ {
 		r[idx] = field.Add(r[idx], q.poly[idx])
 	}
 
