@@ -37,10 +37,10 @@ func TestField(t *testing.T) {
 			{17, 21, 7},
 		}
 		for _, test := range tests {
-			a := F31.newFieldElementFromInt64(test[0])
-			b := F31.newFieldElementFromInt64(test[1])
+			a := F31.NewFieldElementFromInt64(test[0])
+			b := F31.NewFieldElementFromInt64(test[1])
 			actual := F31.Add(a, b)
-			expected := F31.newFieldElementFromInt64(test[2])
+			expected := F31.NewFieldElementFromInt64(test[2])
 			assertEqual(actual, expected, t)
 		}
 	})
@@ -51,10 +51,10 @@ func TestField(t *testing.T) {
 			{15, 30, 16},
 		}
 		for _, test := range tests {
-			a := F31.newFieldElementFromInt64(test[0])
-			b := F31.newFieldElementFromInt64(test[1])
+			a := F31.NewFieldElementFromInt64(test[0])
+			b := F31.NewFieldElementFromInt64(test[1])
 			actual := F31.Sub(a, b)
-			expected := F31.newFieldElementFromInt64(test[2])
+			expected := F31.NewFieldElementFromInt64(test[2])
 			assertEqual(actual, expected, t)
 		}
 	})
@@ -64,10 +64,10 @@ func TestField(t *testing.T) {
 			{24, 19, 22},
 		}
 		for _, test := range tests {
-			a := F31.newFieldElementFromInt64(test[0])
-			b := F31.newFieldElementFromInt64(test[1])
+			a := F31.NewFieldElementFromInt64(test[0])
+			b := F31.NewFieldElementFromInt64(test[1])
 			actual := F31.Mul(a, b)
-			expected := F31.newFieldElementFromInt64(test[2])
+			expected := F31.NewFieldElementFromInt64(test[2])
 			assertEqual(actual, expected, t)
 		}
 	})
@@ -79,11 +79,11 @@ func TestField(t *testing.T) {
 			{4, 1, -4, 11, 13},
 		}
 		for _, test := range tests {
-			a := F31.newFieldElementFromInt64(test[0])
-			b := F31.newFieldElementFromInt64(test[1])
+			a := F31.NewFieldElementFromInt64(test[0])
+			b := F31.NewFieldElementFromInt64(test[1])
 			c := big.NewInt(test[2])
-			d := F31.newFieldElementFromInt64(test[3])
-			expected := F31.newFieldElementFromInt64(test[4])
+			d := F31.NewFieldElementFromInt64(test[3])
+			expected := F31.NewFieldElementFromInt64(test[4])
 			actual := F31.Div(a, b)
 			actual = actual.Exp(c)
 			actual = F31.Mul(actual, d)

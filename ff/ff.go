@@ -26,6 +26,11 @@ func (ff FiniteField) Zero() FieldElement {
 	return FieldElement{nt.Zero, ff}
 }
 
+// Modulus returns the Finite Field modulus
+func (ff FiniteField) Modulus() *nt.Integer {
+	return ff.q
+}
+
 // Rand returns a random field element
 func (ff FiniteField) Rand() (FieldElement, error) {
 
@@ -78,7 +83,7 @@ type FieldElement struct {
 // String implements stringer
 func (fe *FieldElement) String() string {
 
-	return fmt.Sprintf("%v in F/%v", fe.n, fe.p.q)
+	return fmt.Sprintf("%d(F/%v)", fe.n, fe.p.q)
 }
 
 // New takes a number and the field's order
@@ -99,8 +104,8 @@ func (ff FiniteField) NewFieldElement(x *nt.Integer) FieldElement {
 	return FieldElement{x, ff}
 }
 
-// newFieldElementFromInt64 takes int64 params
-func (ff FiniteField) newFieldElementFromInt64(x int64) FieldElement {
+// NewFieldElementFromInt64 takes int64 params
+func (ff FiniteField) NewFieldElementFromInt64(x int64) FieldElement {
 	return FieldElement{nt.FromInt64(x), ff}
 }
 
@@ -137,6 +142,11 @@ func (fe FieldElement) Inv() FieldElement {
 // IsZero returns if the fieldelement is zero
 func (fe FieldElement) IsZero() bool {
 	return fe.n.Cmp(nt.Zero) == 0
+}
+
+// Field returns the FiniteField where are in
+func (fe FieldElement) Field() FiniteField {
+	return fe.p
 }
 
 // Cmp compares field elements
