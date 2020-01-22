@@ -101,7 +101,7 @@ func New(n, p *nt.Integer) (FieldElement, error) {
 
 // NewFieldElement returns a new field eleemnt
 func (ff FiniteField) NewFieldElement(x *nt.Integer) FieldElement {
-	return FieldElement{x, ff}
+	return FieldElement{x.Mod(x, ff.q), ff}
 }
 
 // NewFieldElementFromInt64 takes int64 params
@@ -156,4 +156,9 @@ func (ff FiniteField) Cmp(x FieldElement, y FieldElement) int {
 		return -1
 	}
 	return x.n.Cmp(y.n)
+}
+
+// Big casts a field element to an Integer
+func (fe FieldElement) Big() *nt.Integer {
+	return fe.n
 }
