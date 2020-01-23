@@ -58,4 +58,24 @@ func TestCurve(t *testing.T) {
 		}
 
 	})
+
+	t.Run("TestScalarMul", func(t *testing.T) {
+
+		field, _ := ff.NewFiniteField(nt.FromInt64(29))
+		a := field.NewFieldElementFromInt64(4)
+		b := field.NewFieldElementFromInt64(20)
+
+		curve := NewEllipticCurve(a, b, field)
+
+		P := &Point{X: nt.FromInt64(1), Y: nt.FromInt64(5)}
+
+		k := nt.FromInt64(11)
+
+		actual := curve.ScalarMul(P, k)
+		expected := &Point{X: nt.FromInt64(10), Y: nt.FromInt64(25)}
+
+		if !actual.Equal(expected) || !curve.IsOnCurve(actual) || !curve.IsOnCurve(expected) {
+			t.Error("TestScalarMul failed expected : ", expected, "got :", actual)
+		}
+	})
 }

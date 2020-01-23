@@ -1,8 +1,9 @@
 package ec
 
-import "github.com/actuallyachraf/algebra/ff"
-
-import "github.com/actuallyachraf/algebra/nt"
+import (
+	"github.com/actuallyachraf/algebra/ff"
+	"github.com/actuallyachraf/algebra/nt"
+)
 
 // Curve represents an elliptic curve by it's parameters.
 // An elliptic curve is defined by the Weirstrass equation:
@@ -95,4 +96,25 @@ func (c *Curve) Double(p *Point) *Point {
 func (c *Curve) Neg(p *Point) *Point {
 
 	return &Point{X: p.X, Y: nt.Sub(c.F.Modulus(), p.Y)}
+}
+
+// ScalarMul computes multiplication of curve points by scalars
+func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
+	// the algorithm uses the double and square methods
+	q := &Point{X: nt.Zero, Y: nt.Zero}
+	for nt.Zero.Cmp(s) == -1 {
+		// get the rightmost bit
+		b := new(nt.Integer).And(s, nt.One)
+		// check if it's a one
+		// then add it
+		if b.Cmp(nt.One) == 0 {
+			q = c.Add(q, p)
+		}
+		// right shift the scalar bits by one
+		s = s.Rsh(s, 1)
+		p = c.Double(p)
+	}
+
+	return q
+
 }
