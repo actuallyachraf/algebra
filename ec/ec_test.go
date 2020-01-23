@@ -78,4 +78,66 @@ func TestCurve(t *testing.T) {
 			t.Error("TestScalarMul failed expected : ", expected, "got :", actual)
 		}
 	})
+
+	t.Run("TestGenerator", func(t *testing.T) {
+
+		field, _ := ff.NewFiniteField(nt.FromInt64(29))
+		a := field.NewFieldElementFromInt64(4)
+		b := field.NewFieldElementFromInt64(20)
+
+		curve := NewEllipticCurve(a, b, field)
+
+		// generator for E(F29)
+		G := &Point{X: nt.FromInt64(1), Y: nt.FromInt64(5)}
+		testCases := []*Point{
+			{nt.FromInt64(0), nt.FromInt64(0)},
+			{nt.FromInt64(1), nt.FromInt64(5)},
+			{nt.FromInt64(4), nt.FromInt64(19)},
+			{nt.FromInt64(20), nt.FromInt64(3)},
+			{nt.FromInt64(15), nt.FromInt64(27)},
+			{nt.FromInt64(6), nt.FromInt64(12)},
+			{nt.FromInt64(17), nt.FromInt64(19)},
+			{nt.FromInt64(24), nt.FromInt64(22)},
+			{nt.FromInt64(8), nt.FromInt64(10)},
+			{nt.FromInt64(14), nt.FromInt64(23)},
+			{nt.FromInt64(13), nt.FromInt64(23)},
+			{nt.FromInt64(10), nt.FromInt64(25)},
+			{nt.FromInt64(19), nt.FromInt64(13)},
+			{nt.FromInt64(16), nt.FromInt64(27)},
+			{nt.FromInt64(5), nt.FromInt64(22)},
+			{nt.FromInt64(3), nt.FromInt64(1)},
+			{nt.FromInt64(0), nt.FromInt64(22)},
+			{nt.FromInt64(27), nt.FromInt64(2)},
+			{nt.FromInt64(2), nt.FromInt64(23)},
+			{nt.FromInt64(2), nt.FromInt64(6)},
+			{nt.FromInt64(27), nt.FromInt64(27)},
+			{nt.FromInt64(0), nt.FromInt64(7)},
+			{nt.FromInt64(3), nt.FromInt64(28)},
+			{nt.FromInt64(5), nt.FromInt64(7)},
+			{nt.FromInt64(16), nt.FromInt64(2)},
+			{nt.FromInt64(19), nt.FromInt64(16)},
+			{nt.FromInt64(10), nt.FromInt64(4)},
+			{nt.FromInt64(13), nt.FromInt64(6)},
+			{nt.FromInt64(14), nt.FromInt64(6)},
+			{nt.FromInt64(8), nt.FromInt64(19)},
+			{nt.FromInt64(24), nt.FromInt64(7)},
+			{nt.FromInt64(17), nt.FromInt64(10)},
+			{nt.FromInt64(6), nt.FromInt64(17)},
+			{nt.FromInt64(15), nt.FromInt64(2)},
+			{nt.FromInt64(20), nt.FromInt64(26)},
+			{nt.FromInt64(4), nt.FromInt64(10)},
+			{nt.FromInt64(1), nt.FromInt64(24)},
+		}
+
+		var i int64
+
+		for i = 1; i < 37; i++ {
+			actual := curve.ScalarMul(G, nt.FromInt64(i))
+			expected := testCases[i]
+
+			if !actual.Equal(expected) || !curve.IsOnCurve(actual) || !curve.IsOnCurve(expected) {
+				t.Error("TestScalarMul failed expected : ", expected, "got :", actual)
+			}
+		}
+	})
 }
