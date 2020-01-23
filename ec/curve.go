@@ -37,11 +37,11 @@ func (c *Curve) IsOnCurve(p *Point) bool {
 	// get the field we're operating in
 	field := c.F
 
-	ySquared := field.NewFieldElement(new(nt.Integer).Exp(p.Y, nt.FromInt64(2), nil))
-	xCubed := field.NewFieldElement(new(nt.Integer).Exp(p.X, nt.FromInt64(3), nil))
+	ySquared := field.NewFieldElement(p.Y).Square()
+	xCubed := field.NewFieldElement(p.X).Exp(nt.FromInt64(3))
 
 	righthandSide := field.Add(field.Add(xCubed, field.Mul(c.A, field.NewFieldElement(p.X))), c.B)
-	if field.Cmp(ySquared, righthandSide) == 0 {
+	if righthandSide.Equal(ySquared) {
 		return true
 	}
 	return false
@@ -50,9 +50,28 @@ func (c *Curve) IsOnCurve(p *Point) bool {
 // Add computes the sum of two points on the curve
 func (c *Curve) Add(p, q *Point) *Point {
 
-	// We use the formulas from http://cacr.uwaterloo.ca/ecc/
 	field := c.F
 
+	if p.Equal(Inf) && q.Equal(Inf) {
+		return Inf
+	} else if !p.Equal(Inf) && q.Equal(Inf) {
+		return p
+	} else if p.Equal(Inf) && !q.Equal(Inf) {
+		return q
+	} else if q.Equal(c.Neg(p)) || p.Equal(c.Neg(q)) {
+		return Inf
+	} else if p.Equal(q) {
+		x1 := field.NewFieldElement(p.X)
+		y1 := field.NewFieldElement(p.Y)
+
+		x3 := field.Sub(field.Div(field.Add(field.Mul(x1.Square(), field.NewFieldElementFromInt64(3)), c.A), field.Mul(y1, field.NewFieldElementFromInt64(2))).Square(), field.Mul(x1, field.NewFieldElementFromInt64(2)))
+
+		y3 := field.Sub(field.Mul(field.Sub(x1, x3), field.Div(field.Add(field.Mul(x1.Square(), field.NewFieldElementFromInt64(3)), c.A), field.Mul(y1, field.NewFieldElementFromInt64(2)))), y1)
+
+		return &Point{x3.Big(), y3.Big()}
+	}
+
+	// We use the formulas from http://cacr.uwaterloo.ca/ecc/
 	x1 := field.NewFieldElement(p.X)
 	x2 := field.NewFieldElement(q.X)
 
@@ -65,4 +84,15 @@ func (c *Curve) Add(p, q *Point) *Point {
 	y3 := field.Sub(field.Mul(field.Div(field.Sub(y2, y1), field.Sub(x2, x1)), field.Sub(x1, x3)), y1)
 
 	return &Point{x3.Big(), y3.Big()}
+}
+
+// Double computes 2P
+func (c *Curve) Double(p *Point) *Point {
+	return c.Add(p, p)
+}
+
+// Neg gives you the inverse of (X,Y) which is (X,-Y).
+func (c *Curve) Neg(p *Point) *Point {
+
+	return &Point{X: p.X, Y: nt.Sub(c.F.Modulus(), p.Y)}
 }

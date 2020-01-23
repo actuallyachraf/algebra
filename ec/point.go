@@ -8,7 +8,7 @@ import (
 
 var (
 	// Inf defines the zero point
-	Inf = Point{nt.Zero, nt.Zero}
+	Inf = &Point{nt.Zero, nt.Zero}
 )
 
 // Point represents a point on an elliptic curve

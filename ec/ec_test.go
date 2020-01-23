@@ -10,7 +10,7 @@ func TestCurve(t *testing.T) {
 
 	t.Run("TestIsOnCurve", func(t *testing.T) {
 
-		field := ff.NewFiniteField(nt.FromInt64(29))
+		field, _ := ff.NewFiniteField(nt.FromInt64(29))
 		a := field.NewFieldElementFromInt64(4)
 		b := field.NewFieldElementFromInt64(20)
 
@@ -33,11 +33,11 @@ func TestCurve(t *testing.T) {
 		}
 	})
 
-	t.Run("TestPointAddition", func(t *testing.T) {
+	t.Run("TestPointAdditionAndDoubling", func(t *testing.T) {
 		P := &Point{nt.FromInt64(5), nt.FromInt64(22)}
 		Q := &Point{nt.FromInt64(16), nt.FromInt64(27)}
 
-		field := ff.NewFiniteField(nt.FromInt64(29))
+		field, _ := ff.NewFiniteField(nt.FromInt64(29))
 		a := field.NewFieldElementFromInt64(4)
 		b := field.NewFieldElementFromInt64(20)
 
@@ -49,5 +49,13 @@ func TestCurve(t *testing.T) {
 		if !actual.Equal(expected) {
 			t.Error("TestPointAddition failed expected : ", expected, " got :", actual)
 		}
+
+		expected = &Point{nt.FromInt64(14), nt.FromInt64(6)}
+		actual = curve.Double(P)
+
+		if !actual.Equal(expected) || !curve.IsOnCurve(actual) || !curve.IsOnCurve(expected) {
+			t.Error("TestPointDoubling failed expected : ", expected, "got :", actual)
+		}
+
 	})
 }

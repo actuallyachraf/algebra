@@ -36,5 +36,5 @@ arbitrary precision arithmetic
 - ~~Implement finite field elements.~~
 - ~~Implement polynomial ops.~~
 - Implement binary fields.
-- Implement elliptic curves.
+- ~~Implement elliptic curves.~~
 - Implement pairings.

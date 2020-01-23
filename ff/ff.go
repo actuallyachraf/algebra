@@ -11,14 +11,22 @@ import (
 	"github.com/actuallyachraf/algebra/nt"
 )
 
+const (
+	primeCheckPasses = 16 // This gives us a probability of 0.9999999997671694
+)
+
+var (
+	errNonPrimeModulus = errors.New("finite fields are defined over prime modulus only")
+)
+
 // FiniteField represents a field over modulus q.
 type FiniteField struct {
 	q *nt.Integer
 }
 
 // NewFiniteField creates a new field
-func NewFiniteField(q *nt.Integer) FiniteField {
-	return FiniteField{q}
+func NewFiniteField(q *nt.Integer) (FiniteField, error) {
+	return FiniteField{q}, nil
 }
 
 // Zero returns the 0 on Fq
@@ -28,6 +36,11 @@ func (ff FiniteField) Zero() FieldElement {
 
 // Modulus returns the Finite Field modulus
 func (ff FiniteField) Modulus() *nt.Integer {
+	return ff.q
+}
+
+// Char returns the characteristic of the finite field
+func (ff FiniteField) Char() *nt.Integer {
 	return ff.q
 }
 
@@ -62,14 +75,12 @@ func (ff FiniteField) Sub(x, y FieldElement) FieldElement {
 
 // Mul multiplies two FiniteField elements
 func (ff FiniteField) Mul(x, y FieldElement) FieldElement {
-	var z = nt.ModMul(x.n, y.n, ff.q)
-	return FieldElement{z, ff}
+	return ff.NewFieldElement(nt.ModMul(x.n, y.n, ff.q))
 }
 
 // Div divides two FiniteField elements
 func (ff FiniteField) Div(x, y FieldElement) FieldElement {
-	var z = nt.ModDiv(x.n, y.n, ff.q)
-	return FieldElement{z, ff}
+	return ff.NewFieldElement(nt.ModDiv(x.n, y.n, ff.q))
 }
 
 // FieldElement is defined over a finite field of order p
@@ -101,12 +112,13 @@ func New(n, p *nt.Integer) (FieldElement, error) {
 
 // NewFieldElement returns a new field eleemnt
 func (ff FiniteField) NewFieldElement(x *nt.Integer) FieldElement {
-	return FieldElement{x.Mod(x, ff.q), ff}
+
+	return FieldElement{x, ff}
 }
 
 // NewFieldElementFromInt64 takes int64 params
 func (ff FiniteField) NewFieldElementFromInt64(x int64) FieldElement {
-	return FieldElement{nt.FromInt64(x), ff}
+	return ff.NewFieldElement(nt.FromInt64(x))
 }
 
 // Double compues 2*fe
@@ -149,6 +161,21 @@ func (fe FieldElement) Field() FiniteField {
 	return fe.p
 }
 
+// Big casts a field element to an Integer
+func (fe FieldElement) Big() *nt.Integer {
+	return new(big.Int).Set(fe.n)
+}
+
+// Equal checks for equality between field elements
+func (fe FieldElement) Equal(other FieldElement) bool {
+
+	if fe.p.Modulus().Cmp(other.p.Modulus()) != 0 || fe.n.Cmp(other.n) != 0 {
+		return false
+	}
+
+	return true
+}
+
 // Cmp compares field elements
 func (ff FiniteField) Cmp(x FieldElement, y FieldElement) int {
 
@@ -156,9 +183,4 @@ func (ff FiniteField) Cmp(x FieldElement, y FieldElement) int {
 		return -1
 	}
 	return x.n.Cmp(y.n)
-}
-
-// Big casts a field element to an Integer
-func (fe FieldElement) Big() *nt.Integer {
-	return fe.n
 }

@@ -7,14 +7,14 @@ import (
 	"github.com/actuallyachraf/algebra/nt"
 )
 
-var F31 = NewFiniteField(nt.FromInt64(31))
+var F31, _ = NewFiniteField(nt.FromInt64(31))
 
 func TestFF(t *testing.T) {
 
 	var two = new(nt.Integer).SetInt64(2)
 
 	// GF(2)
-	var gf2 = NewFiniteField(two)
+	var gf2, _ = NewFiniteField(two)
 
 	var x = gf2.NewFieldElement(nt.One)
 	var y = gf2.NewFieldElement(nt.One)
