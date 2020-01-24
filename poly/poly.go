@@ -22,6 +22,27 @@ type Polynomial struct {
 	baseField ff.FiniteField
 }
 
+// New instantiates a new polynomial
+func New(coeffs []ff.FieldElement, degree int) *Polynomial {
+
+	var p = &Polynomial{}
+
+	p.poly = coeffs
+	p.baseField = coeffs[0].Field()
+	return p
+}
+func (p *Polynomial) trim() {
+	var last int = 0
+	for i := p.Degree(); i >= 0; i-- { // why i > 0, not i >=0? do not remove the constant
+		if (p.poly)[i].Big().Sign() != 0 {
+			last = i
+			break
+		}
+	}
+	p.poly = p.poly[:(last + 1)]
+
+}
+
 // ZeroPolynomial returns the zeroth monomial for a given field
 func ZeroPolynomial(field ff.FiniteField) *Polynomial {
 	m := New([]ff.FieldElement{field.NewFieldElementFromInt64(0)}, 0)
@@ -32,7 +53,7 @@ func ZeroPolynomial(field ff.FiniteField) *Polynomial {
 func (p *Polynomial) String() string {
 	var s = ""
 	for idx, coeff := range p.poly {
-		s += fmt.Sprintf("%sX^%d", coeff.String(), idx)
+		s += fmt.Sprintf("%sX^%d+", coeff.String(), idx)
 	}
 	return s
 }
@@ -40,7 +61,7 @@ func (p *Polynomial) String() string {
 // Evaluate a polynomial at some point in F
 func (p *Polynomial) Evaluate(x ff.FieldElement) ff.FieldElement {
 
-	if p.degree == 0 {
+	if p.Degree() == 0 {
 		r, _ := ff.New(nt.Zero, nt.One)
 		return r
 	}
@@ -57,12 +78,12 @@ func (p *Polynomial) Evaluate(x ff.FieldElement) ff.FieldElement {
 
 // Degree returns the polynomial degree
 func (p *Polynomial) Degree() int {
-	return p.degree
+	return len(p.poly) - 1
 }
 
 // LeadingCoeff returns the leading coefficient of the polynomial
-func (p *Polynomial) LeadingCoeff() int64 {
-	return int64(len(p.poly))
+func (p *Polynomial) LeadingCoeff() ff.FieldElement {
+	return p.poly[p.Degree()]
 }
 
 // Equal are two polynomials equal ?
@@ -92,20 +113,6 @@ func (p *Polynomial) Equal(q *Polynomial) bool {
 	return true
 }
 
-// New instantiates a new polynomial
-func New(coeffs []ff.FieldElement, degree int) *Polynomial {
-
-	var p = &Polynomial{}
-
-	if degree <= 0 {
-		return p
-	}
-	p.poly = coeffs
-	p.degree = degree
-	p.baseField = coeffs[0].Field()
-	return p
-}
-
 // Add returns r = p + q it applies the underlying ring arithmetic.
 func Add(p, q *Polynomial) *Polynomial {
 
@@ -114,9 +121,13 @@ func Add(p, q *Polynomial) *Polynomial {
 
 	var d int
 
-	if m > n {
+	if q.Equal(ZeroPolynomial(field)) {
+		return p
+	} else if p.Equal(ZeroPolynomial(field)) {
+		return q
+	} else if m > n {
 		d = m
-	} else {
+	} else if m <= n {
 		d = n
 	}
 	var r = make([]ff.FieldElement, d+1)
@@ -141,7 +152,7 @@ func Sub(p, q *Polynomial) *Polynomial {
 
 	field := p.baseField
 
-	for idx := 0; idx <= d; idx++ {
+	for idx := 0; idx < d+1; idx++ {
 		r[idx] = field.Sub(r[idx], q.poly[idx])
 	}
 
@@ -168,34 +179,43 @@ func Mul(p, q *Polynomial) *Polynomial {
 	return New(r, d)
 }
 
-// QuoRem returns the quotient and remainder of polynomial division
+// Copy reproduces a copy of the polynomial
+func (p *Polynomial) Copy() *Polynomial {
+
+	q := make([]ff.FieldElement, len(p.poly))
+
+	copy(q, p.poly)
+
+	return New(q, p.Degree())
+}
+
+// QuoRem computes polynomial long division
 func QuoRem(p, q *Polynomial) (*Polynomial, *Polynomial) {
+
+	r := p.Copy()
+
+	field := p.baseField
 
 	n := p.Degree()
 	m := q.Degree()
 
-	if p.baseField.Char().Cmp(q.baseField.Char()) != 0 {
-		return nil, nil
-	}
-	field := p.baseField
+	diff := n - m
+	out := make([]ff.FieldElement, diff+1)
 
-	if n < m {
-		return New([]ff.FieldElement{field.NewFieldElementFromInt64(0)}, 0), p
-	}
-	r := p
-	u := q.poly[m].Inv()
+	for idx := diff; diff >= 0; idx-- {
+		quot := field.Div(p.poly[n], q.poly[m])
 
-	quo := make([]ff.FieldElement, n-m+1)
+		out[idx] = quot
 
-	for i := (n - m); i >= 0; i-- {
-		if r.Degree() == m+i {
-			quo[i] = field.Mul(field.NewFieldElementFromInt64(r.LeadingCoeff()), u)
-			tmp := New([]ff.FieldElement{quo[i]}, i)
-			r = Sub(r, Mul(tmp, q))
-		} else {
-			quo[i] = field.NewFieldElementFromInt64(0)
+		for i := m; i >= 0; i-- {
+			r.poly[diff+i] = field.Sub(r.poly[diff+i], field.Mul(q.poly[i], quot))
 		}
+		diff--
+		n--
+		r.trim()
 	}
-
-	return New(quo, n-m), r
+	quo := New(out, len(out)-1)
+	quo.trim()
+	r.trim()
+	return quo, r
 }

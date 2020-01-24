@@ -34,6 +34,11 @@ func (ff FiniteField) Zero() FieldElement {
 	return FieldElement{nt.Zero, ff}
 }
 
+// One returns the 1 on Fq
+func (ff FiniteField) One() FieldElement {
+	return FieldElement{nt.One, ff}
+}
+
 // Modulus returns the Finite Field modulus
 func (ff FiniteField) Modulus() *nt.Integer {
 	return ff.q
