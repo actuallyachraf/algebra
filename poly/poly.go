@@ -1,221 +1,317 @@
 // Package poly provides an implementation of polynomials over fields.
 // Proposed are the arithmetic ops, evaluation and interpolation.
+// Thanks to @jukworks for the base code.
 package poly
 
 import (
 	"fmt"
-	"math"
-
 	"github.com/actuallyachraf/algebra/ff"
-	"github.com/actuallyachraf/algebra/nt"
+	"math/big"
+	"math/rand"
+	"time"
 )
 
-// Polynomial implements the polynomial type using runtime slices.
-// What is a polynomial ?
-// P(X) = \sigma_{i=1..n} pow(X,i)*Coeff_i
-// We appreciate polynomials to be sorted in decreasing by their powers
-// the index represents the powers, the item at p[i] is the coefficient.
-// A Polynomial is used for implementing binary fields (package bf).
-type Polynomial struct {
-	degree    int
-	poly      []ff.FieldElement
-	baseField ff.FiniteField
+// Polynomial implements the polynomial type
+// using a vector of integers ordered by decreasing order i.e (lowest degree -> highest degree)
+type Polynomial []*big.Int
+
+// NewPolynomialInts Helper function for generating a polynomial with given integers
+func NewPolynomialInts(coeffs ...int) (p Polynomial) {
+	p = make([]*big.Int, len(coeffs))
+	for i := 0; i < len(coeffs); i++ {
+		p[i] = big.NewInt(int64(coeffs[i]))
+	}
+	p.trim()
+	return
 }
 
-// New instantiates a new polynomial
-func New(coeffs []ff.FieldElement, degree int) *Polynomial {
-
-	var p = &Polynomial{}
-
-	p.poly = coeffs
-	p.baseField = coeffs[0].Field()
-	return p
+// NewPolynomial Helper function for generating a polynomial with field elements
+func NewPolynomial(coeffs []ff.FieldElement) (p Polynomial) {
+	p = make([]*big.Int, len(coeffs))
+	for i := 0; i < len(coeffs); i++ {
+		p[i] = coeffs[i].Big()
+	}
+	p.trim()
+	return
 }
+
+// RandomPolynomial Returns a polynomial with random coefficients given a degree
+// and coefficient in [0,2^bits]
+func RandomPolynomial(degree, bits int64) (p Polynomial) {
+	p = make(Polynomial, degree+1)
+	rr := rand.New(rand.NewSource(time.Now().UnixNano()))
+	exp := big.NewInt(2)
+	exp.Exp(exp, big.NewInt(bits), nil)
+	for i := 0; i <= p.Degree(); i++ {
+		p[i] = new(big.Int)
+		p[i].Rand(rr, exp)
+	}
+	p.trim()
+	return
+}
+
+// trim slices the underlying vector to remove zero coefficients of higher degree
 func (p *Polynomial) trim() {
 	var last int = 0
-	for i := p.Degree(); i >= 0; i-- { // why i > 0, not i >=0? do not remove the constant
-		if (p.poly)[i].Big().Sign() != 0 {
+	for i := p.Degree(); i > 0; i-- { // why i > 0, not i >=0? do not remove the constant
+		if (*p)[i].Sign() != 0 {
 			last = i
 			break
 		}
 	}
-	p.poly = p.poly[:(last + 1)]
-
+	*p = (*p)[:(last + 1)]
 }
 
-// ZeroPolynomial returns the zeroth monomial for a given field
-func ZeroPolynomial(field ff.FiniteField) *Polynomial {
-	m := New([]ff.FieldElement{field.NewFieldElementFromInt64(0)}, 0)
-	return m
+// isZero() checks if P is the zero polynomial
+func (p *Polynomial) isZero() bool {
+	if p.Degree() == 0 && (*p)[0].Cmp(big.NewInt(0)) == 0 {
+		return true
+	}
+	return false
 }
 
-// String implements pretty printing for polynomials
-func (p *Polynomial) String() string {
-	var s = ""
-	for idx, coeff := range p.poly {
-		s += fmt.Sprintf("%sX^%d+", coeff.String(), idx)
-	}
-	return s
+// Degree returns the degree of the polynomial
+func (p Polynomial) Degree() int {
+	return len(p) - 1
 }
 
-// Evaluate a polynomial at some point in F
-func (p *Polynomial) Evaluate(x ff.FieldElement) ff.FieldElement {
-
-	if p.Degree() == 0 {
-		r, _ := ff.New(nt.Zero, nt.One)
-		return r
-	}
-
-	field := p.baseField
-	eval, _ := ff.New(nt.Zero, field.Modulus())
-
-	for idx, coeff := range p.poly {
-		field.Add(eval, field.Mul(coeff, x.Exp(nt.FromInt64(int64(idx)))))
-	}
-
-	return eval
-}
-
-// Degree returns the polynomial degree
-func (p *Polynomial) Degree() int {
-	return len(p.poly) - 1
-}
-
-// LeadingCoeff returns the leading coefficient of the polynomial
-func (p *Polynomial) LeadingCoeff() ff.FieldElement {
-	return p.poly[p.Degree()]
-}
-
-// Equal are two polynomials equal ?
-func (p *Polynomial) Equal(q *Polynomial) bool {
-
-	if p.Degree() != q.Degree() {
-		return false
-	}
-
-	if len(p.poly) != len(q.poly) {
-		return false
-	}
-
-	fieldP := p.baseField
-	fieldQ := q.baseField
-
-	if fieldP.Char().Cmp(fieldQ.Char()) != 0 {
-		return false
-	}
-
-	for idx := 0; idx < len(p.poly); idx++ {
-		if fieldP.Cmp(p.poly[idx], q.poly[idx]) != 0 {
-			return false
+// String implements the printing interface
+func (p Polynomial) String() (s string) {
+	s = "["
+	for i := len(p) - 1; i >= 0; i-- {
+		switch p[i].Sign() {
+		case -1:
+			if i == len(p)-1 {
+				s += "-"
+			} else {
+				s += " - "
+			}
+			if i == 0 || p[i].Int64() != -1 {
+				s += p[i].String()[1:]
+			}
+		case 0:
+			continue
+		case 1:
+			if i < len(p)-1 {
+				s += " + "
+			}
+			if i == 0 || p[i].Int64() != 1 {
+				s += p[i].String()
+			}
+		}
+		if i > 0 {
+			s += "x"
+			if i > 1 {
+				s += "^" + fmt.Sprintf("%d", i)
+			}
 		}
 	}
-
-	return true
+	if s == "[" {
+		s += "0"
+	}
+	s += "]"
+	return
 }
 
-// Add returns r = p + q it applies the underlying ring arithmetic.
-func Add(p, q *Polynomial) *Polynomial {
-
-	m, n := p.Degree(), q.Degree()
-	field := q.baseField
-
-	var d int
-
-	if q.Equal(ZeroPolynomial(field)) {
-		return p
-	} else if p.Equal(ZeroPolynomial(field)) {
-		return q
-	} else if m > n {
-		d = m
-	} else if m <= n {
-		d = n
+// Compare compares two polynomials and returns -1 if P < Q, 0 if P = Q , or 1
+func (p *Polynomial) Compare(q *Polynomial) int {
+	switch {
+	case p.Degree() > q.Degree():
+		return 1
+	case p.Degree() < q.Degree():
+		return -1
 	}
-	var r = make([]ff.FieldElement, d+1)
-
-	for i := 0; i < d+1; i++ {
-		r[i] = field.Add(p.poly[i], q.poly[i])
-	}
-
-	return New(r, d)
-}
-
-// Sub substracts two polynomials
-func Sub(p, q *Polynomial) *Polynomial {
-
-	m, n := p.Degree(), q.Degree()
-	// the degree of r is the max(deg(p),deg(q))
-	d := int(math.Max(float64(m), float64(n)))
-
-	r := make([]ff.FieldElement, d+1)
-
-	copy(r, p.poly)
-
-	field := p.baseField
-
-	for idx := 0; idx < d+1; idx++ {
-		r[idx] = field.Sub(r[idx], q.poly[idx])
-	}
-
-	return New(r, d)
-}
-
-// Mul multiply two polynomials
-func Mul(p, q *Polynomial) *Polynomial {
-
-	d := p.Degree() + q.Degree()
-	r := make([]ff.FieldElement, d+1)
-
-	field := p.baseField
-
-	for idx := 0; idx < len(r); idx++ {
-		r[idx] = field.NewFieldElementFromInt64(0)
-	}
-
-	for i := 0; i < len(p.poly); i++ {
-		for j := 0; j < len(q.poly); j++ {
-			r[i+j] = field.Add(r[i+j], field.Mul(p.poly[i], q.poly[j]))
+	for i := 0; i <= p.Degree(); i++ {
+		switch (*p)[i].Cmp((*q)[i]) {
+		case 1:
+			return 1
+		case -1:
+			return -1
 		}
 	}
-	return New(r, d)
+	return 0
 }
 
-// Copy reproduces a copy of the polynomial
-func (p *Polynomial) Copy() *Polynomial {
-
-	q := make([]ff.FieldElement, len(p.poly))
-
-	copy(q, p.poly)
-
-	return New(q, p.Degree())
-}
-
-// QuoRem computes polynomial long division
-func QuoRem(p, q *Polynomial) (*Polynomial, *Polynomial) {
-
-	r := p.Copy()
-
-	field := p.baseField
-
-	n := p.Degree()
-	m := q.Degree()
-
-	diff := n - m
-	out := make([]ff.FieldElement, diff+1)
-
-	for idx := diff; diff >= 0; idx-- {
-		quot := field.Div(p.poly[n], q.poly[m])
-
-		out[idx] = quot
-
-		for i := m; i >= 0; i-- {
-			r.poly[diff+i] = field.Sub(r.poly[diff+i], field.Mul(q.poly[i], quot))
-		}
-		diff--
-		n--
-		r.trim()
+// Add adds two polynomials m represents the modulo operator for polynomials
+// over finite fields.
+func (p Polynomial) Add(q Polynomial, m *big.Int) Polynomial {
+	if p.Compare(&q) < 0 {
+		return q.Add(p, m)
 	}
-	quo := New(out, len(out)-1)
-	quo.trim()
+	var r Polynomial = make([]*big.Int, len(p))
+	for i := 0; i < len(q); i++ {
+		a := new(big.Int)
+		a.Add(p[i], q[i])
+		r[i] = a
+	}
+	for i := len(q); i < len(p); i++ {
+		a := new(big.Int)
+		a.Set(p[i])
+		r[i] = a
+	}
+	if m != nil {
+		for i := 0; i < len(p); i++ {
+			r[i].Mod(r[i], m)
+		}
+	}
 	r.trim()
-	return quo, r
+	return r
+}
+
+// Neg returns a polynomial Q = -P
+func (p *Polynomial) Neg() Polynomial {
+	var q Polynomial = make([]*big.Int, len(*p))
+	for i := 0; i < len(*p); i++ {
+		b := new(big.Int)
+		b.Neg((*p)[i])
+		q[i] = b
+	}
+	return q
+}
+
+// Clone does deep-copy of the polynomial, given adjust != 0 it raises
+// the polynomial to a higher degree.
+// for example, P = x + 1 and adjust = 2, Clone() returns x^3 + x^2
+func (p Polynomial) Clone(adjust int) Polynomial {
+	var q Polynomial = make([]*big.Int, len(p)+adjust)
+	if adjust < 0 {
+		return NewPolynomialInts(0)
+	}
+	for i := 0; i < adjust; i++ {
+		q[i] = big.NewInt(0)
+	}
+	for i := adjust; i < len(p)+adjust; i++ {
+		b := new(big.Int)
+		b.Set(p[i-adjust])
+		q[i] = b
+	}
+	return q
+}
+
+// reduce does modular arithmetic over modulus m
+func (p *Polynomial) reduce(m *big.Int) {
+	if m == nil {
+		return
+	}
+	for i := 0; i <= (*p).Degree(); i++ {
+		(*p)[i].Mod((*p)[i], m)
+	}
+	p.trim()
+}
+
+// Sub subtracts P from Q by simply P + (Neg(Q))
+func (p Polynomial) Sub(q Polynomial, m *big.Int) Polynomial {
+	r := q.Neg()
+	return p.Add(r, m)
+}
+
+// Mul computes P * Q
+func (p Polynomial) Mul(q Polynomial, m *big.Int) Polynomial {
+	if m != nil {
+		p.reduce(m)
+		q.reduce(m)
+	}
+	var r Polynomial = make([]*big.Int, p.Degree()+q.Degree()+1)
+	for i := 0; i < len(r); i++ {
+		r[i] = big.NewInt(0)
+	}
+	for i := 0; i < len(p); i++ {
+		for j := 0; j < len(q); j++ {
+			a := new(big.Int)
+			a.Mul(p[i], q[j])
+			a.Add(a, r[i+j])
+			if m != nil {
+				a.Mod(a, m)
+			}
+			r[i+j] = a
+		}
+	}
+	r.trim()
+	return r
+}
+
+// Div returns (P / Q, P % Q)
+func (p Polynomial) Div(q Polynomial, m *big.Int) (quo, rem Polynomial) {
+	if m != nil {
+		p.reduce(m)
+		q.reduce(m)
+	}
+	if p.Degree() < q.Degree() || q.isZero() {
+		quo = NewPolynomialInts(0)
+		rem = p.Clone(0)
+		return
+	}
+	quo = make([]*big.Int, p.Degree()-q.Degree()+1)
+	rem = p.Clone(0)
+	for i := 0; i < len(quo); i++ {
+		quo[i] = big.NewInt(0)
+	}
+	t := p.Clone(0)
+	qd := q.Degree()
+	for {
+		td := t.Degree()
+		rd := td - qd
+		if rd < 0 || t.isZero() {
+			rem = t
+			break
+		}
+		r := new(big.Int)
+		if m != nil {
+			r.ModInverse(q[qd], m)
+			r.Mul(r, t[td])
+			r.Mod(r, m)
+		} else {
+			r.Div(t[td], q[qd])
+		}
+		// if r == 0, it means that the highest coefficient of the result is not an integer
+		// this polynomial library handles integer coefficients
+		if r.Cmp(big.NewInt(0)) == 0 {
+			quo = NewPolynomialInts(0)
+			rem = p.Clone(0)
+			return
+		}
+		u := q.Clone(rd)
+		for i := rd; i < len(u); i++ {
+			u[i].Mul(u[i], r)
+			if m != nil {
+				u[i].Mod(u[i], m)
+			}
+		}
+		t = t.Sub(u, m)
+		t.trim()
+		quo[rd] = r
+	}
+	quo.trim()
+	rem.trim()
+	return
+}
+
+// GCD returns the greatest common divisor(GCD) of P and Q (Euclidean algorithm)
+func (p Polynomial) GCD(q Polynomial, m *big.Int) Polynomial {
+	if p.Compare(&q) < 0 {
+		return q.GCD(p, m)
+	}
+	if q.isZero() {
+		return p
+	}
+	_, rem := p.Div(q, m)
+	return q.GCD(rem, m)
+
+}
+
+// Eval returns p(v) where v is the given big integer
+func (p Polynomial) Eval(x *big.Int, m *big.Int) (y *big.Int) {
+	y = big.NewInt(0)
+	accx := big.NewInt(1)
+	xd := new(big.Int)
+	for i := 0; i <= p.Degree(); i++ {
+		xd.Mul(accx, p[i])
+		y.Add(y, xd)
+		accx.Mul(accx, x)
+		if m != nil {
+			y.Mod(y, m)
+			accx.Mod(accx, m)
+		}
+	}
+	return y
 }

@@ -43,7 +43,7 @@ func main() {
 
 	fmt.Println(nt.ModExp(a, k, modulus))
 
-	Z17 := ff.NewFiniteField(new(big.Int).SetInt64(17))
+	Z17, _ := ff.NewFiniteField(new(big.Int).SetInt64(17))
 	x := Z17.NewFieldElement(nt.FromInt64(4))
 	y := Z17.NewFieldElement(nt.FromInt64(5))
 	// what's 4 modinv ? 4/5 = 11

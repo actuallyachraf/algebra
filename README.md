@@ -29,6 +29,7 @@ arbitrary precision arithmetic
 - [Pairings For Begineers](http://www.craigcostello.com.au/pairings/PairingsForBeginners.pdf)
 - [Pairings For Cryptographers](https://eprint.iacr.org/2006/165)
 - [Implementing Pairing Based Cryptography](https://crypto.stanford.edu/pbc/thesis.pdf)
+- [Modern Computer Algebra](https://www.cambridge.org/core/books/modern-computer-algebra/DB3563D4013401734851CF683D2F03F0)
 
 ## WIP
 

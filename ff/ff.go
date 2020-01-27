@@ -68,14 +68,12 @@ func (ff FiniteField) Rand() (FieldElement, error) {
 
 // Add sums two FintieField elements
 func (ff FiniteField) Add(x, y FieldElement) FieldElement {
-	var z = nt.ModAdd(x.n, y.n, ff.q)
-	return FieldElement{z, ff}
+	return ff.NewFieldElement(nt.ModAdd(x.n, y.n, ff.q))
 }
 
 // Sub subs two FiniteField elements
 func (ff FiniteField) Sub(x, y FieldElement) FieldElement {
-	var z = nt.ModSub(x.n, y.n, ff.q)
-	return FieldElement{z, ff}
+	return ff.NewFieldElement(nt.ModSub(x.n, y.n, ff.q))
 }
 
 // Mul multiplies two FiniteField elements
@@ -99,7 +97,7 @@ type FieldElement struct {
 // String implements stringer
 func (fe *FieldElement) String() string {
 
-	return fmt.Sprintf("%d(F/%v)", fe.n, fe.p.q)
+	return fmt.Sprintf("%d(F/%d)", fe.n, fe.p.q)
 }
 
 // New takes a number and the field's order
@@ -118,7 +116,7 @@ func New(n, p *nt.Integer) (FieldElement, error) {
 // NewFieldElement returns a new field eleemnt
 func (ff FiniteField) NewFieldElement(x *nt.Integer) FieldElement {
 
-	return FieldElement{x, ff}
+	return FieldElement{nt.Mod(x, ff.q), ff}
 }
 
 // NewFieldElementFromInt64 takes int64 params
