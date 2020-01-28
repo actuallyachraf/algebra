@@ -5,19 +5,21 @@ package poly
 
 import (
 	"fmt"
-	"github.com/actuallyachraf/algebra/ff"
 	"math/big"
 	"math/rand"
 	"time"
+
+	"github.com/actuallyachraf/algebra/ff"
+	"github.com/actuallyachraf/algebra/nt"
 )
 
 // Polynomial implements the polynomial type
 // using a vector of integers ordered by decreasing order i.e (lowest degree -> highest degree)
-type Polynomial []*big.Int
+type Polynomial []*nt.Integer
 
 // NewPolynomialInts Helper function for generating a polynomial with given integers
 func NewPolynomialInts(coeffs ...int) (p Polynomial) {
-	p = make([]*big.Int, len(coeffs))
+	p = make([]*nt.Integer, len(coeffs))
 	for i := 0; i < len(coeffs); i++ {
 		p[i] = big.NewInt(int64(coeffs[i]))
 	}
@@ -27,7 +29,7 @@ func NewPolynomialInts(coeffs ...int) (p Polynomial) {
 
 // NewPolynomial Helper function for generating a polynomial with field elements
 func NewPolynomial(coeffs []ff.FieldElement) (p Polynomial) {
-	p = make([]*big.Int, len(coeffs))
+	p = make([]*nt.Integer, len(coeffs))
 	for i := 0; i < len(coeffs); i++ {
 		p[i] = coeffs[i].Big()
 	}
@@ -134,11 +136,11 @@ func (p *Polynomial) Compare(q *Polynomial) int {
 
 // Add adds two polynomials m represents the modulo operator for polynomials
 // over finite fields.
-func (p Polynomial) Add(q Polynomial, m *big.Int) Polynomial {
+func (p Polynomial) Add(q Polynomial, m *nt.Integer) Polynomial {
 	if p.Compare(&q) < 0 {
 		return q.Add(p, m)
 	}
-	var r Polynomial = make([]*big.Int, len(p))
+	var r Polynomial = make([]*nt.Integer, len(p))
 	for i := 0; i < len(q); i++ {
 		a := new(big.Int)
 		a.Add(p[i], q[i])
@@ -160,7 +162,7 @@ func (p Polynomial) Add(q Polynomial, m *big.Int) Polynomial {
 
 // Neg returns a polynomial Q = -P
 func (p *Polynomial) Neg() Polynomial {
-	var q Polynomial = make([]*big.Int, len(*p))
+	var q Polynomial = make([]*nt.Integer, len(*p))
 	for i := 0; i < len(*p); i++ {
 		b := new(big.Int)
 		b.Neg((*p)[i])
@@ -173,7 +175,7 @@ func (p *Polynomial) Neg() Polynomial {
 // the polynomial to a higher degree.
 // for example, P = x + 1 and adjust = 2, Clone() returns x^3 + x^2
 func (p Polynomial) Clone(adjust int) Polynomial {
-	var q Polynomial = make([]*big.Int, len(p)+adjust)
+	var q Polynomial = make([]*nt.Integer, len(p)+adjust)
 	if adjust < 0 {
 		return NewPolynomialInts(0)
 	}
@@ -189,7 +191,7 @@ func (p Polynomial) Clone(adjust int) Polynomial {
 }
 
 // reduce does modular arithmetic over modulus m
-func (p *Polynomial) reduce(m *big.Int) {
+func (p *Polynomial) reduce(m *nt.Integer) {
 	if m == nil {
 		return
 	}
@@ -200,18 +202,18 @@ func (p *Polynomial) reduce(m *big.Int) {
 }
 
 // Sub subtracts P from Q by simply P + (Neg(Q))
-func (p Polynomial) Sub(q Polynomial, m *big.Int) Polynomial {
+func (p Polynomial) Sub(q Polynomial, m *nt.Integer) Polynomial {
 	r := q.Neg()
 	return p.Add(r, m)
 }
 
 // Mul computes P * Q
-func (p Polynomial) Mul(q Polynomial, m *big.Int) Polynomial {
+func (p Polynomial) Mul(q Polynomial, m *nt.Integer) Polynomial {
 	if m != nil {
 		p.reduce(m)
 		q.reduce(m)
 	}
-	var r Polynomial = make([]*big.Int, p.Degree()+q.Degree()+1)
+	var r Polynomial = make([]*nt.Integer, p.Degree()+q.Degree()+1)
 	for i := 0; i < len(r); i++ {
 		r[i] = big.NewInt(0)
 	}
@@ -231,7 +233,7 @@ func (p Polynomial) Mul(q Polynomial, m *big.Int) Polynomial {
 }
 
 // Div returns (P / Q, P % Q)
-func (p Polynomial) Div(q Polynomial, m *big.Int) (quo, rem Polynomial) {
+func (p Polynomial) Div(q Polynomial, m *nt.Integer) (quo, rem Polynomial) {
 	if m != nil {
 		p.reduce(m)
 		q.reduce(m)
@@ -241,7 +243,7 @@ func (p Polynomial) Div(q Polynomial, m *big.Int) (quo, rem Polynomial) {
 		rem = p.Clone(0)
 		return
 	}
-	quo = make([]*big.Int, p.Degree()-q.Degree()+1)
+	quo = make([]*nt.Integer, p.Degree()-q.Degree()+1)
 	rem = p.Clone(0)
 	for i := 0; i < len(quo); i++ {
 		quo[i] = big.NewInt(0)
@@ -287,7 +289,7 @@ func (p Polynomial) Div(q Polynomial, m *big.Int) (quo, rem Polynomial) {
 }
 
 // GCD returns the greatest common divisor(GCD) of P and Q (Euclidean algorithm)
-func (p Polynomial) GCD(q Polynomial, m *big.Int) Polynomial {
+func (p Polynomial) GCD(q Polynomial, m *nt.Integer) Polynomial {
 	if p.Compare(&q) < 0 {
 		return q.GCD(p, m)
 	}
@@ -300,7 +302,7 @@ func (p Polynomial) GCD(q Polynomial, m *big.Int) Polynomial {
 }
 
 // Eval returns p(v) where v is the given big integer
-func (p Polynomial) Eval(x *big.Int, m *big.Int) (y *big.Int) {
+func (p Polynomial) Eval(x *nt.Integer, m *nt.Integer) (y *nt.Integer) {
 	y = big.NewInt(0)
 	accx := big.NewInt(1)
 	xd := new(big.Int)

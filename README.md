@@ -34,7 +34,7 @@ arbitrary precision arithmetic
 ## WIP
 
 - ~~Implement operations on arbitrary precision integers and tests.~~
-- ~~Implement finite field elements.~~
+- ~~Implement finite field elements.~~ (Optimized version instead of wrapping bigint)
 - ~~Implement polynomial ops.~~
 - Implement binary fields.
 - ~~Implement elliptic curves.~~

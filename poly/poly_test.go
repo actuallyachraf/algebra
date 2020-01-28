@@ -1,10 +1,11 @@
 package poly
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/actuallyachraf/algebra/ff"
-
-import "github.com/actuallyachraf/algebra/nt"
+	"github.com/actuallyachraf/algebra/ff"
+	"github.com/actuallyachraf/algebra/nt"
+)
 
 func TestPolynomial(t *testing.T) {
 	// (X+1) * (X+1) == X**2 + 2*X + 1
