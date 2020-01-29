@@ -16,6 +16,10 @@ type Point struct {
 	y *nt.Integer
 }
 
+// NewPoint creates a new point
+func NewPoint(x *nt.Integer, y *nt.Integer) Point {
+	return Point{x, y}
+}
 func (p Point) String() string {
 	return fmt.Sprintf("(%v, %v)", p.x, p.y)
 }
