@@ -1,6 +1,9 @@
 package ec
 
 import (
+	"errors"
+	"math/big"
+
 	"github.com/actuallyachraf/algebra/ff"
 	"github.com/actuallyachraf/algebra/nt"
 )
@@ -117,4 +120,18 @@ func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
 
 	return q
 
+}
+
+// Order returns smallest n where nG = O (point at zero)
+func (c *Curve) Order(g *Point) (*nt.Integer, error) {
+	start := nt.One
+	end := c.F.Modulus()
+	for i := new(big.Int).Set(start); i.Cmp(end) <= 0; i.Add(i, nt.One) {
+		iCopy := new(big.Int).SetBytes(i.Bytes())
+		mPoint := c.ScalarMul(g, iCopy)
+		if mPoint.Equal(Inf) {
+			return i, nil
+		}
+	}
+	return nt.Zero, errors.New("invalid order")
 }
