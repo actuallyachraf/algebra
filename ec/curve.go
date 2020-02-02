@@ -103,18 +103,19 @@ func (c *Curve) Neg(p *Point) *Point {
 
 // ScalarMul computes multiplication of curve points by scalars
 func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
+	k := new(big.Int).Set(s)
 	// the algorithm uses the double and square methods
 	q := &Point{X: nt.Zero, Y: nt.Zero}
-	for nt.Zero.Cmp(s) == -1 {
+	for nt.Zero.Cmp(k) == -1 {
 		// get the rightmost bit
-		b := new(nt.Integer).And(s, nt.One)
+		b := new(nt.Integer).And(k, nt.One)
 		// check if it's a one
 		// then add it
 		if b.Cmp(nt.One) == 0 {
 			q = c.Add(q, p)
 		}
 		// right shift the scalar bits by one
-		s = s.Rsh(s, 1)
+		s = k.Rsh(k, 1)
 		p = c.Double(p)
 	}
 
@@ -124,11 +125,13 @@ func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
 
 // Order returns smallest n where nG = O (point at zero)
 func (c *Curve) Order(g *Point) (*nt.Integer, error) {
+	// loop from i:=1 to i<ec.Q+1
 	start := nt.One
 	end := c.F.Modulus()
 	for i := new(big.Int).Set(start); i.Cmp(end) <= 0; i.Add(i, nt.One) {
 		iCopy := new(big.Int).SetBytes(i.Bytes())
 		mPoint := c.ScalarMul(g, iCopy)
+
 		if mPoint.Equal(Inf) {
 			return i, nil
 		}

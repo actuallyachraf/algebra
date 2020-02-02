@@ -1,6 +1,7 @@
 package schnorr
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/actuallyachraf/algebra/ec"
@@ -25,6 +26,11 @@ func TestSchnorr(t *testing.T) {
 	}
 	secp256k1 := ec.NewEllipticCurve(Fq.NewFieldElement(secp256k1A), Fq.NewFieldElement(secp256k1B), Fq)
 	secp256k1Generator := ec.Point{X: secp256k1GeneratorX, Y: secp256k1GeneratorY}
+	parameters := Params{
+		EC:    *secp256k1,
+		Gen:   secp256k1Generator,
+		Order: secp256k1GeneratorOrder,
+	}
 	t.Run("TestGenerator", func(t *testing.T) {
 		// Test that the generator is on the curve
 		if !secp256k1.IsOnCurve(&secp256k1Generator) {
@@ -34,6 +40,21 @@ func TestSchnorr(t *testing.T) {
 		s, _ := Fq.Rand()
 		if !secp256k1.IsOnCurve(secp256k1.ScalarMul(&secp256k1Generator, s.Big())) {
 			t.Fatal("generated points should be on curve")
+		}
+	})
+	t.Run("TestSignVerify", func(t *testing.T) {
+
+		msg := []byte("helloworld")
+		kp := GenerateKeypair(parameters)
+		fmt.Println("Public Key :", kp.P, " | Private Key :", kp.K)
+		fmt.Println("Check Public Key on Curve")
+		if !secp256k1.IsOnCurve(kp.PublicKey.P) {
+			t.Fatal("bad public key for secp256k1")
+		}
+		sig := Sign(msg, &parameters, kp)
+
+		if !Verify(msg, sig, kp, parameters) {
+			t.Fatal("bad signature")
 		}
 	})
 
