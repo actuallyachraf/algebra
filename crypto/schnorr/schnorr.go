@@ -4,14 +4,9 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
-	"math/big"
 
 	"github.com/actuallyachraf/algebra/ec"
 	"github.com/actuallyachraf/algebra/nt"
-)
-
-const (
-	bitLength = 512
 )
 
 // PublicKey represents a point on the underlying curve
@@ -21,7 +16,7 @@ type PublicKey struct {
 
 // PrivateKey represents a scalar in Fp
 type PrivateKey struct {
-	K *big.Int
+	K *nt.Integer
 }
 
 // Keypair represents a private key and public key
@@ -32,8 +27,8 @@ type Keypair struct {
 
 // Signature represents a schnorr signature which is a curve point and a scalar
 type Signature struct {
-	R *big.Int
-	S *big.Int
+	R *nt.Integer
+	S *nt.Integer
 }
 
 // Params stores the schnorr parameters
@@ -41,15 +36,15 @@ type Signature struct {
 // the number of points i.e the order of the group can be computed trough
 // point counting algorithms, there exist an upperbound given by Hasse's theorem.
 type Params struct {
-	EC    ec.Curve // Underlying curve group
-	Gen   ec.Point // Group generator
-	Order *big.Int // Group order
+	EC    ec.Curve    // Underlying curve group
+	Gen   ec.Point    // Group generator
+	Order *nt.Integer // Group order
 }
 
 // GenerateKeypair generates a keypair
 func GenerateKeypair(params Params) Keypair {
 
-	order := new(big.Int).Set(params.Order)
+	order := new(nt.Integer).Set(params.Order)
 
 	sk, _ := rand.Int(rand.Reader, order)
 	q := params.EC.ScalarMul(&params.Gen, sk)
@@ -61,7 +56,7 @@ func GenerateKeypair(params Params) Keypair {
 
 // HashToPoint computes a message fingerprint H(m||P.X) where m is the message and P the public
 // key.
-func HashToPoint(message []byte, P *ec.Point) *big.Int {
+func HashToPoint(message []byte, P *ec.Point) *nt.Integer {
 
 	var b = make([]byte, 0)
 
@@ -73,7 +68,7 @@ func HashToPoint(message []byte, P *ec.Point) *big.Int {
 
 	hash := hasher.Sum(nil)
 
-	r := new(big.Int).SetBytes(hash)
+	r := new(nt.Integer).SetBytes(hash)
 
 	return r
 }
@@ -81,9 +76,9 @@ func HashToPoint(message []byte, P *ec.Point) *big.Int {
 // Sign a message given a keypair
 func Sign(message []byte, params *Params, kp Keypair) Signature {
 	// underlying curve field
-	order := new(big.Int).Set(params.Order)
-	s := new(big.Int).SetInt64(0)
-	R := new(big.Int).SetInt64(0)
+	order := new(nt.Integer).Set(params.Order)
+	s := new(nt.Integer).SetInt64(0)
+	R := new(nt.Integer).SetInt64(0)
 	for s.Cmp(nt.Zero) == 0 {
 		k, _ := rand.Int(rand.Reader, order)
 		Q := params.EC.ScalarMul(&params.Gen, k)
