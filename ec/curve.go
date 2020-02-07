@@ -51,6 +51,28 @@ func (c *Curve) IsOnCurve(p *Point) bool {
 	return false
 }
 
+// At takes the X-coordinates computes the Y coordinate and checks that is on curve
+func (c *Curve) At(x *nt.Integer) (*Point, error) {
+
+	if x == nil {
+		panic("nil pointer derefrence")
+	}
+	field := c.F
+	xCubed := field.NewFieldElement(x).Exp(nt.FromInt64(3))
+	righthandSide := field.Add(field.Add(xCubed, field.Mul(c.A, field.NewFieldElement(x))), c.B)
+
+	y := new(big.Int).ModSqrt(righthandSide.Big(), field.Modulus())
+	if y == nil {
+		return Inf, errors.New("no square root moduli")
+	}
+	var p = Point{X: x, Y: y}
+
+	if !c.IsOnCurve(&p) {
+		return Inf, errors.New("point is not on curve")
+	}
+	return &p, nil
+}
+
 // Add computes the sum of two points on the curve
 func (c *Curve) Add(p, q *Point) *Point {
 

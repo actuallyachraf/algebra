@@ -32,3 +32,13 @@ func (p *Point) Equal(q *Point) bool {
 func (p *Point) String() string {
 	return "(" + p.X.String() + ", " + p.Y.String() + ")"
 }
+
+// Bytes returns a byte slice of the X and Y coordinates
+func (p *Point) Bytes() []byte {
+
+	b := make([]byte, 0, 64)
+	b = append(b, p.X.Bytes()...)
+	b = append(b, p.Y.Bytes()...)
+
+	return b
+}

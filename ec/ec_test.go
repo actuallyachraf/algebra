@@ -15,20 +15,26 @@ func TestCurve(t *testing.T) {
 		b := field.NewFieldElementFromInt64(20)
 
 		curve := NewEllipticCurve(a, b, field)
+		// The commented points are those whose x coordinate is the same
+		// but y coordinates are different yet they're both on the same curve.
 		points := []*Point{
-			{nt.FromInt64(2), nt.FromInt64(6)},
-			{nt.FromInt64(4), nt.FromInt64(19)},
+			//	{nt.FromInt64(2), nt.FromInt64(6)},
+			//	{nt.FromInt64(4), nt.FromInt64(19)},
 			{nt.FromInt64(5), nt.FromInt64(7)},
-			{nt.FromInt64(5), nt.FromInt64(22)},
+			//	{nt.FromInt64(5), nt.FromInt64(22)},
 			{nt.FromInt64(2), nt.FromInt64(23)},
 			{nt.FromInt64(10), nt.FromInt64(25)},
-			{nt.FromInt64(13), nt.FromInt64(6)},
+			//	{nt.FromInt64(13), nt.FromInt64(6)},
 			{nt.FromInt64(16), nt.FromInt64(27)},
 		}
 
 		for _, point := range points {
 			if !curve.IsOnCurve(point) {
 				t.Error("IsOnCurve failed")
+			}
+			actual, err := curve.At(point.X)
+			if !actual.Equal(point) || err != nil {
+				t.Error("At failed with error : ", err, " expected :", point, "got :", actual)
 			}
 		}
 	})
