@@ -31,6 +31,20 @@ func NewVector(elems []*nt.Integer) Vector {
 	return v
 }
 
+// Equal compares two vectors component wise
+func (v Vector) Equal(w Vector) bool {
+
+	if v.Len() != w.Len() {
+		return false
+	}
+	for i := range v {
+		if v[i].Cmp(w[i]) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // Len returns the count of elements in the vector
 func (v Vector) Len() int {
 	return len(v)
@@ -51,23 +65,18 @@ func (v Vector) Add(w Vector) (Vector, error) {
 	return u, nil
 }
 
-// InnerProd computes the inner product of two vectors and return the result
-func (v Vector) InnerProd(w Vector, order *nt.Integer) (*nt.Integer, error) {
+// InnerProdMod computes the inner product of two vectors modulo order and returns the result
+func (v Vector) InnerProdMod(w Vector, order *nt.Integer) (*nt.Integer, error) {
 
 	res := nt.FromInt64(0)
-	ord := new(big.Int)
-	if order == nil {
-		ord.SetInt64(1)
-	}
 	if v.Len() != w.Len() {
 		return res, errors.New("vectors are of different size")
 	}
 
-
 	for i := range v {
-		res = nt.Add(res, nt.Mod(nt.Mul(v[i], w[i]),ord))
-		res = nt.Mod(res, ord)
+		res = nt.Add(res, nt.Mod(nt.Mul(v[i], w[i]), order))
+		res = nt.Mod(res, order)
 	}
 
-	return res,nil
+	return res, nil
 }

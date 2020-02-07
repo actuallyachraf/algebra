@@ -55,7 +55,7 @@ func (ff FiniteField) Rand() (FieldElement, error) {
 	var fe FieldElement
 
 	maxbits := ff.q.BitLen()
-	buf := make([]byte, (maxbits/8)-1)
+	buf := make([]byte, (maxbits / 8))
 	_, err := rand.Read(buf)
 	if err != nil {
 		return fe, err

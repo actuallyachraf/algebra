@@ -137,12 +137,55 @@ func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
 			q = c.Add(q, p)
 		}
 		// right shift the scalar bits by one
-		s = k.Rsh(k, 1)
+		k = k.Rsh(k, 1)
 		p = c.Double(p)
 	}
 
 	return q
 
+}
+
+// DoubleScalarMult computes a scalar multiplication of the mP+nQ for
+// pedersen commitments in a single loop.
+func (c *Curve) DoubleScalarMult(P, Q *Point, m, n *nt.Integer) *Point {
+
+	mCopy := new(nt.Integer).Set(m)
+	nCopy := new(nt.Integer).Set(n)
+
+	// result
+	S := &Point{X: nt.FromInt64(0), Y: nt.FromInt64(0)}
+	// Precompute P + Q
+	R := c.Add(P, Q)
+
+	// the algorithm works as follows
+	// let s be the bitlength of m and n respectively
+	mS := m.BitLen()
+	nS := n.BitLen()
+
+	max := func(a, b int) int {
+		if a >= b {
+			return a
+		}
+		return b
+	}
+	end := 0
+	start := max(mS, nS)
+	for i := start; i >= end; i-- {
+		S = c.Double(S)
+		mBit := new(nt.Integer).And(mCopy, nt.One)
+		nBit := new(nt.Integer).And(nCopy, nt.One)
+
+		if mBit.Cmp(nt.One) == 0 && nBit.Cmp(nt.Zero) == 0 {
+			S = c.Add(S, P)
+		} else if mBit.Cmp(nt.Zero) == 0 && nBit.Cmp(nt.One) == 0 {
+			S = c.Add(S, Q)
+		} else if mBit.Cmp(nt.One) == 0 && nBit.Cmp(nt.One) == 0 {
+			S = c.Add(S, R)
+		}
+		mCopy = mCopy.Rsh(mCopy, 1)
+		nCopy = nCopy.Rsh(nCopy, 1)
+	}
+	return S
 }
 
 // Order returns smallest n where nG = O (point at zero)
