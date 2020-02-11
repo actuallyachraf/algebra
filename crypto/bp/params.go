@@ -21,15 +21,15 @@ var (
 // G : Generator of the subgroup of curve points
 // H : The nothing up my sleeve second generator whose discrete log w.r.t to G is unkown
 type Parameters struct {
-	EC    *ec.Curve
-	G     ec.Point
-	Order *nt.Integer
-	H     ec.Point
-	L     *nt.Integer
-	M     int
-	N     int
-	GVec  []*ec.Point
-	HVec  []*ec.Point
+	EC   *ec.Curve
+	G    *ec.Point
+	H    *ec.Point
+	U    *ec.Point
+	L    *nt.Integer
+	M    int
+	N    int
+	GVec []*ec.Point
+	HVec []*ec.Point
 }
 
 // GenParametersSecp256k1 generates bulletproof parameters using the curve
@@ -40,8 +40,8 @@ func GenParametersSecp256k1(bitlength int) *Parameters {
 	var (
 		secp256k1GeneratorX, _     = new(nt.Integer).SetString("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16)
 		secp256k1GeneratorY, _     = new(nt.Integer).SetString("483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16)
-		secp256k1GeneratorOrder, _ = new(nt.Integer).SetString("115792089237316195423570985008687907852837564279074904382605163141518161494337", 10)
-		fieldOrder, _              = new(nt.Integer).SetString("115792089237316195423570985008687907853269984665640564039457584007908834671663", 10)
+		secp256k1GeneratorOrder, _ = new(nt.Integer).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
+		fieldOrder, _              = new(nt.Integer).SetString("fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f", 16)
 		secp256k1A                 = new(nt.Integer).SetInt64(0)
 		secp256k1B                 = new(nt.Integer).SetInt64(7)
 	)
@@ -104,15 +104,18 @@ func GenParametersSecp256k1(bitlength int) *Parameters {
 		VectorG[i] = hash2Point(hashedG[:])
 		VectorH[i] = hash2Point(hashedH[:])
 	}
-
+	var U = &ec.Point{
+		X: new(nt.Integer).SetBytes(H.X.Bytes()),
+		Y: new(nt.Integer).SetBytes(H.Y.Bytes()),
+	}
 	return &Parameters{
-		EC:    secp256k1,
-		G:     secp256k1BasePoint,
-		Order: secp256k1GeneratorOrder,
-		L:     fieldOrder,
-		H:     *H,
-		N:     64,
-		GVec:  VectorG,
-		HVec:  VectorH,
+		EC:   secp256k1,
+		G:    &secp256k1BasePoint,
+		L:    secp256k1GeneratorOrder,
+		H:    H,
+		U:    U,
+		N:    64,
+		GVec: VectorG,
+		HVec: VectorH,
 	}
 }

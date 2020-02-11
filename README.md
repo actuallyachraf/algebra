@@ -20,11 +20,11 @@ It's a **WIP** and might take time to be finished.
 ### Algebraic Tools Implementations
 
 - ```bf``` package implements binary fields.
-- ```ec``` package implements several elliptic curve primitives and
-a handful of cryptographic curves.
+- ```ec``` package implements elliptic curve primitives and
+a few cryptographic curves.
 - ```nt``` package implements number theoretic algorithms and primitives using
 arbitrary precision arithmetic.
-- ```ff``` package implements generic FiniteFields and Field Elements.
+- ```ff``` package implements generic finite fields and field elements.
 - ```group``` package implements some custom groups such as Zp,GF(2),GF(8)...
 - ```poly``` package implements polynomials over rings.
 - ```pairing``` package implements bilinear pairings.

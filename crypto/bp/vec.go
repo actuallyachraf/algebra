@@ -65,6 +65,21 @@ func (v Vector) Add(w Vector) (Vector, error) {
 	return u, nil
 }
 
+// AddMod sums two vectors modulo order and returns the result
+func (v Vector) AddMod(w Vector, order *nt.Integer) (Vector, error) {
+	if v.Len() != w.Len() {
+		return Vector{}, errors.New("vectors are of different sizes")
+	}
+
+	u := NewZeroVector(v.Len())
+
+	for i := range u {
+		u[i] = nt.Mod(nt.Add(v[i], w[i]), order)
+	}
+
+	return u, nil
+}
+
 // InnerProdMod computes the inner product of two vectors modulo order and returns the result
 func (v Vector) InnerProdMod(w Vector, order *nt.Integer) (*nt.Integer, error) {
 
@@ -79,4 +94,43 @@ func (v Vector) InnerProdMod(w Vector, order *nt.Integer) (*nt.Integer, error) {
 	}
 
 	return res, nil
+}
+
+// HadamardProdMod computes the Hadamard (component-wise) product of two vectors modulo order and returns the result
+func (v Vector) HadamardProdMod(w Vector, order *nt.Integer) (Vector, error) {
+
+	if v.Len() != w.Len() {
+		return NewZeroVector(0), errors.New("vectors are of different size")
+	}
+	u := NewZeroVector(v.Len())
+
+	for i := range v {
+		u[i] = nt.Mod(nt.Mul(v[i], w[i]), order)
+	}
+
+	return u, nil
+}
+
+// ScalarAddMod computes component wise addition with scalars reduced modulo order
+func (v Vector) ScalarAddMod(s *nt.Integer, order *nt.Integer) (Vector, error) {
+
+	u := NewZeroVector(v.Len())
+
+	for i := range v {
+		u[i] = nt.Mod(nt.Add(v[i], s), order)
+	}
+
+	return u, nil
+}
+
+// ScalarMulMod computes component wise multiplication with scalars reduced modulo order
+func (v Vector) ScalarMulMod(s *nt.Integer, order *nt.Integer) (Vector, error) {
+
+	u := NewZeroVector(v.Len())
+
+	for i := range v {
+		u[i] = nt.Mod(nt.Mul(v[i], s), order)
+	}
+
+	return u, nil
 }

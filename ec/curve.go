@@ -147,6 +147,7 @@ func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
 
 // DoubleScalarMult computes a scalar multiplication of the mP+nQ for
 // pedersen commitments in a single loop.
+// TODO: Fix edge case
 func (c *Curve) DoubleScalarMult(P, Q *Point, m, n *nt.Integer) *Point {
 
 	mCopy := new(nt.Integer).Set(m)
@@ -155,10 +156,10 @@ func (c *Curve) DoubleScalarMult(P, Q *Point, m, n *nt.Integer) *Point {
 	// result
 	S := &Point{X: nt.FromInt64(0), Y: nt.FromInt64(0)}
 	// Precompute P + Q
-	R := c.Add(P, Q)
-
 	// the algorithm works as follows
 	// let s be the bitlength of m and n respectively
+	T := c.Add(P, Q)
+
 	mS := m.BitLen()
 	nS := n.BitLen()
 
@@ -169,19 +170,24 @@ func (c *Curve) DoubleScalarMult(P, Q *Point, m, n *nt.Integer) *Point {
 		return b
 	}
 	end := 0
-	start := max(mS, nS)
+	start := max(mS, nS) - 1
+
 	for i := start; i >= end; i-- {
 		S = c.Double(S)
-		mBit := new(nt.Integer).And(mCopy, nt.One)
-		nBit := new(nt.Integer).And(nCopy, nt.One)
+		idx := int64(1 * i)
+		mBit := new(nt.Integer).And(mCopy, nt.FromInt64(idx))
+		nBit := new(nt.Integer).And(nCopy, nt.FromInt64(idx))
 
-		if mBit.Cmp(nt.One) == 0 && nBit.Cmp(nt.Zero) == 0 {
-			S = c.Add(S, P)
-		} else if mBit.Cmp(nt.Zero) == 0 && nBit.Cmp(nt.One) == 0 {
-			S = c.Add(S, Q)
-		} else if mBit.Cmp(nt.One) == 0 && nBit.Cmp(nt.One) == 0 {
-			S = c.Add(S, R)
+		if mBit.Cmp(nt.One) == 0 && nBit.Cmp(nt.One) == 0 {
+			S = c.Add(S, T)
+		} else {
+			if mBit.Cmp(nt.One) == 0 && nBit.Cmp(nt.Zero) == 0 {
+				S = c.Add(S, P)
+			} else if mBit.Cmp(nt.Zero) == 0 && nBit.Cmp(nt.One) == 0 {
+				S = c.Add(S, Q)
+			}
 		}
+
 		mCopy = mCopy.Rsh(mCopy, 1)
 		nCopy = nCopy.Rsh(nCopy, 1)
 	}

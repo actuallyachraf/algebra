@@ -145,7 +145,7 @@ func TestCurve(t *testing.T) {
 			n, _ := field.Rand()
 
 			P := testCases[i]
-			Q := testCases[i+1]
+			Q := testCases[len(testCases)-i-1]
 
 			expected := naiveMulScalarMult(P, Q, m.Big(), n.Big())
 			actual := curve.DoubleScalarMult(P, Q, m.Big(), n.Big())
