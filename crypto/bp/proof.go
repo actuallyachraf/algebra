@@ -2,6 +2,7 @@ package bp
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 
@@ -67,23 +68,21 @@ func GenArgParams(params *Parameters, G, H []*ec.Point, x *nt.Integer, L, R, P *
 
 // GenInnerProdArg builds an argument of knowledge c = <a,b>
 // the procedure is ran recursively.
-func GenInnerProdArg(params *Parameters, arg InnerProdArgument, G, H []*ec.Point, a, b Vector, u *ec.Point, P *ec.Point) *InnerProdArgument {
+func GenInnerProdArg(params *Parameters, G, H []*ec.Point, a, b Vector, u *ec.Point, P *ec.Point) *InnerProdArgument {
 
-	// fix both iterators
-	curIt := uint64(math.Log2(float64(a.Len()))) - 1
-	nPrime := a.Len()
+	round := 0
+	n := a.Len()
 
-	cL, _ := a[:nPrime].InnerProdMod(b[nPrime:], params.L)
-	cR, _ := a[nPrime:].InnerProdMod(b[:nPrime], params.L)
-	// commitment to L
-	comL := DoubleVectorPedersenCommitmentWithGen(params, G[nPrime:], H[:nPrime], a[:nPrime], b[nPrime:])
-	L := params.EC.Add(comL, params.EC.ScalarMul(u, cL))
-	// commitment to R
-	comR := DoubleVectorPedersenCommitmentWithGen(params, G[:nPrime], H[nPrime:], a[nPrime:], b[:nPrime])
-	R := params.EC.Add(comR, params.EC.ScalarMul(u, cR))
+	loglen := int(math.Log2(float64(len(a))))
 
-	arg.L[curIt] = L
-	arg.R[curIt] = R
+	challenges := make([]*big.Int, loglen+1)
+	Lvals := make([]*ec.Point, loglen)
+	Rvals := make([]*ec.Point, loglen)
+	var aPrime = NewVector(a)
+	fmt.Println(aPrime.Len())
+
+	var bPrime = NewVector(b)
+	fmt.Println(bPrime.Len())
 
 	// Fiat Shamir transform challenge is the hash value of L,R
 	concat := func(a ...[]byte) []byte {
@@ -94,52 +93,120 @@ func GenInnerProdArg(params *Parameters, arg InnerProdArgument, G, H []*ec.Point
 		}
 		return c
 	}
-	hashChallenge := sha3.Sum256(
-		concat(L.Bytes(), R.Bytes()),
-	)
-	challengeScalar := new(nt.Integer).SetBytes(hashChallenge[:])
-	challengeScalarInv := nt.ModInv(challengeScalar, params.L)
-	arg.Challenge[curIt] = challengeScalar
+	for n > 1 {
+		fmt.Print(aPrime)
+		fmt.Println(bPrime)
+		n = n / 2
+		cL, _ := aPrime[:n].InnerProdMod(bPrime[n:], params.L)
+		cR, _ := aPrime[n:].InnerProdMod(bPrime[:n], params.L)
 
-	// generate new round generators
-	Gprime, Hprime, Pprime := GenArgParams(params, G, H, challengeScalar, L, R, P)
+		fmt.Print(aPrime)
+		fmt.Println(bPrime)
+		// commitment to L
+		comL := DoubleVectorPedersenCommitmentWithGen(params, G[n:], H[:n], aPrime[:n], bPrime[n:])
+		L := params.EC.Add(comL, params.EC.ScalarMul(u, cL))
 
-	aPrime1, _ := a[:nPrime].ScalarMulMod(challengeScalar, params.L)
-	aPrime2, _ := a[nPrime:].ScalarMulMod(challengeScalarInv, params.L)
-	aPrime, _ := aPrime1.Add(aPrime2)
+		fmt.Print(aPrime)
+		fmt.Println(bPrime)
+		// commitment to R
+		comR := DoubleVectorPedersenCommitmentWithGen(params, G[:n], H[n:], aPrime[n:], bPrime[:n])
+		R := params.EC.Add(comR, params.EC.ScalarMul(u, cR))
 
-	bPrime1, _ := b[:nPrime].ScalarMulMod(challengeScalar, params.L)
-	bPrime2, _ := b[nPrime:].ScalarMulMod(challengeScalarInv, params.L)
-	bPrime, _ := bPrime1.Add(bPrime2)
+		fmt.Print(aPrime)
+		fmt.Println(bPrime)
+		Lvals[round] = L
+		Rvals[round] = R
 
-	return GenInnerProdArg(params, arg, Gprime, Hprime, aPrime, bPrime, u, Pprime)
+		hashChallenge := sha3.Sum256(
+			concat(L.Bytes(), R.Bytes()),
+		)
+		challengeScalar := new(nt.Integer).SetBytes(hashChallenge[:])
+		challengeScalar.Mod(challengeScalar, params.L)
+		challenges[round] = new(nt.Integer).SetBytes(challengeScalar.Bytes())
+
+		challengeScalarInv := nt.ModInv(challengeScalar, params.L)
+
+		// generate new round generators
+		G, H, P = GenArgParams(params, G, H, challengeScalar, L, R, P)
+
+		aPrime1, _ := aPrime[:n].ScalarMulMod(challengeScalar, params.L)
+		fmt.Print(aPrime)
+		fmt.Print(aPrime1)
+		aPrime2, _ := aPrime[n:].ScalarMulMod(challengeScalarInv, params.L)
+		fmt.Print(aPrime)
+		fmt.Print(aPrime2)
+		aPrime, _ = aPrime1.Add(aPrime2)
+		fmt.Print(aPrime)
+
+		bPrime1, _ := bPrime[:n].ScalarMulMod(challengeScalar, params.L)
+		bPrime2, _ := bPrime[n:].ScalarMulMod(challengeScalarInv, params.L)
+		bPrime, _ = bPrime1.Add(bPrime2)
+		fmt.Print(aPrime)
+		fmt.Println(bPrime)
+
+		fmt.Println(challenges)
+		round++
+	}
+	return &InnerProdArgument{Lvals, Rvals, aPrime[0], bPrime[0], challenges}
+
+	/*
+		// fix both iterators
+		curIt := uint64(math.Log2(float64(a.Len()))) - 1
+		nPrime := a.Len() / 2
+
+		cL, _ := a[:nPrime].InnerProdMod(b[nPrime:], params.L)
+		cR, _ := a[nPrime:].InnerProdMod(b[:nPrime], params.L)
+		// commitment to L
+		comL := DoubleVectorPedersenCommitmentWithGen(params, G[nPrime:], H[:nPrime], a[:nPrime], b[nPrime:])
+		L := params.EC.Add(comL, params.EC.ScalarMul(u, cL))
+		// commitment to R
+		comR := DoubleVectorPedersenCommitmentWithGen(params, G[:nPrime], H[nPrime:], a[nPrime:], b[:nPrime])
+		R := params.EC.Add(comR, params.EC.ScalarMul(u, cR))
+
+		arg.L[curIt] = L
+		arg.R[curIt] = R
+
+		// Fiat Shamir transform challenge is the hash value of L,R
+		concat := func(a ...[]byte) []byte {
+			c := make([]byte, 0, len(a)*2)
+
+			for _, v := range a {
+				c = append(c, v...)
+			}
+			return c
+		}
+		hashChallenge := sha3.Sum256(
+			concat(L.Bytes(), R.Bytes()),
+		)
+		challengeScalar := new(nt.Integer).SetBytes(hashChallenge[:])
+		challengeScalarInv := nt.ModInv(challengeScalar, params.L)
+		arg.Challenge[curIt] = challengeScalar
+
+		// generate new round generators
+		Gprime, Hprime, Pprime := GenArgParams(params, G, H, challengeScalar, L, R, P)
+
+		aPrime1, _ := a[:nPrime].ScalarMulMod(challengeScalar, params.L)
+		aPrime2, _ := a[nPrime:].ScalarMulMod(challengeScalarInv, params.L)
+		aPrime, _ := aPrime1.Add(aPrime2)
+
+		bPrime1, _ := b[:nPrime].ScalarMulMod(challengeScalar, params.L)
+		bPrime2, _ := b[nPrime:].ScalarMulMod(challengeScalarInv, params.L)
+		bPrime, _ := bPrime1.Add(bPrime2)
+
+		return GenInnerProdArg(params, arg, Gprime, Hprime, aPrime, bPrime, u, Pprime)
+	*/
 }
 
 // ProveInnerProdArg runs the recursive subroutine
 func ProveInnerProdArg(params *Parameters, a []*nt.Integer, b []*nt.Integer, c *nt.Integer, P, U *ec.Point, G, H []*ec.Point) *InnerProdArgument {
-	loglen := int(math.Log2(float64(len(a))))
-
-	challenges := make([]*big.Int, loglen+1)
-	Lvals := make([]*ec.Point, loglen)
-	Rvals := make([]*ec.Point, loglen)
-
-	runningProof := InnerProdArgument{
-		Lvals,
-		Rvals,
-		big.NewInt(0),
-		big.NewInt(0),
-		challenges}
-
 	// randomly generate a challenge scalar
 	challengeHash := sha3.Sum256(P.Bytes())
 	challengeScalar := new(nt.Integer).SetBytes(challengeHash[:])
-	runningProof.Challenge[loglen] = new(big.Int).SetBytes(challengeHash[:])
 
 	xC := nt.ModMul(challengeScalar, c, params.L)
 	uS := params.EC.ScalarMul(U, xC)
 	Pprime := params.EC.Add(P, U)
-	//fmt.Printf("Prover Pprime value to run sub off of: %s\n", Pprime)
-	return GenInnerProdArg(params, runningProof, G, H, a, b, uS, Pprime)
+	return GenInnerProdArg(params, G, H, a, b, uS, Pprime)
 }
 
 // VerifyInnerProdArg verifies a given inner product argument outputs accepts or rejects
@@ -151,7 +218,7 @@ func VerifyInnerProdArg(params *Parameters, c *nt.Integer, P, u *ec.Point, GVec,
 	uS := params.EC.ScalarMul(u, challengeScalar)
 
 	// proof iterator
-	iter := len(ip.Challenge) - 1
+	iter := len(ip.Challenge) - 2
 
 	if ip.Challenge[iter].Cmp(challengeScalar) != 0 {
 		return false, errors.New("bad challenge scalar")
