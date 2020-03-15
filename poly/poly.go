@@ -363,3 +363,19 @@ func (p Polynomial) Reverse() Polynomial {
 	}
 	return a
 }
+
+// Pow computes p^k using repeated squaring
+func (p Polynomial) Pow(k *nt.Integer, m *nt.Integer) Polynomial {
+	res := NewPolynomialInts(1)
+	cur := p.Clone(0)
+
+	for k.Cmp(nt.FromInt64(0)) != 0 {
+		if nt.Mod(k, nt.FromInt64(2)).Cmp(nt.FromInt64(0)) != 0 {
+			res = res.Mul(cur, m)
+		}
+		k.Rsh(k, 1)
+		cur = cur.Mul(cur, m)
+
+	}
+	return res
+}

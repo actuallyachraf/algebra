@@ -145,4 +145,9 @@ func TestPolynomial(t *testing.T) {
 
 		assert.Equal(t, f.Compose(g, nt.FromInt64(233)), NewPolynomialInts(2, 3, 1))
 	})
+	t.Run("TestPow", func(t *testing.T) {
+		f := NewPolynomialInts(1, 1)
+		fSquared := f.Pow(nt.FromInt64(2), nt.FromInt64(233))
+		assert.Equal(t, fSquared, NewPolynomialInts(1, 2, 1))
+	})
 }
