@@ -171,11 +171,11 @@ func (p Polynomial) Add(q Polynomial, m *nt.Integer) Polynomial {
 }
 
 // Neg returns a polynomial Q = -P
-func (p *Polynomial) Neg() Polynomial {
-	var q Polynomial = make([]*nt.Integer, len(*p))
-	for i := 0; i < len(*p); i++ {
+func (p Polynomial) Neg() Polynomial {
+	var q Polynomial = make([]*nt.Integer, len(p))
+	for i := 0; i < len(p); i++ {
 		b := new(big.Int)
-		b.Neg((*p)[i])
+		b.Neg(p[i])
 		q[i] = b
 	}
 	return q

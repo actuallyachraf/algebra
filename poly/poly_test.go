@@ -150,4 +150,9 @@ func TestPolynomial(t *testing.T) {
 		fSquared := f.Pow(nt.FromInt64(2), nt.FromInt64(233))
 		assert.Equal(t, fSquared, NewPolynomialInts(1, 2, 1))
 	})
+	t.Run("TestMonomial", func(t *testing.T) {
+		f := NewPolynomialInts(0, 1)
+		f = f.Clone(1023).Add(NewPolynomialInts(1).Neg(), nil)
+		t.Log(f)
+	})
 }
