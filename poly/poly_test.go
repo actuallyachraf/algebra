@@ -5,6 +5,7 @@ import (
 
 	"github.com/actuallyachraf/algebra/ff"
 	"github.com/actuallyachraf/algebra/nt"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPolynomial(t *testing.T) {
@@ -142,6 +143,6 @@ func TestPolynomial(t *testing.T) {
 		f := NewPolynomialInts(0, 1, 1)
 		g := NewPolynomialInts(1, 1)
 
-		t.Log(f.Compose(g, nt.FromInt64(233)))
+		assert.Equal(t, f.Compose(g, nt.FromInt64(233)), NewPolynomialInts(2, 3, 1))
 	})
 }
