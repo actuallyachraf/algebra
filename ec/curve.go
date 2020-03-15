@@ -125,7 +125,7 @@ func (c *Curve) Neg(p *Point) *Point {
 
 // ScalarMul computes multiplication of curve points by scalars
 func (c *Curve) ScalarMul(p *Point, s *nt.Integer) *Point {
-	k := new(big.Int).Set(s)
+	k := new(big.Int).SetBytes(s.Bytes())
 	// the algorithm uses the double and square methods
 	q := &Point{X: nt.Zero, Y: nt.Zero}
 	for nt.Zero.Cmp(k) == -1 {

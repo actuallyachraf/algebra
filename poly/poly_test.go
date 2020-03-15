@@ -138,5 +138,10 @@ func TestPolynomial(t *testing.T) {
 		}
 
 	})
+	t.Run("TestCompose", func(t *testing.T) {
+		f := NewPolynomialInts(0, 1, 1)
+		g := NewPolynomialInts(1, 1)
 
+		t.Log(f.Compose(g, nt.FromInt64(233)))
+	})
 }

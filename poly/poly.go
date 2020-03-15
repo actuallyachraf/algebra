@@ -27,6 +27,16 @@ func NewPolynomialInts(coeffs ...int) (p Polynomial) {
 	return
 }
 
+// NewPolynomialBigInt Helper function for generating a polynomial with given integers
+func NewPolynomialBigInt(coeffs ...*big.Int) (p Polynomial) {
+	p = make([]*nt.Integer, len(coeffs))
+	for i := 0; i < len(coeffs); i++ {
+		p[i] = coeffs[i]
+	}
+	p.trim()
+	return
+}
+
 // NewPolynomial Helper function for generating a polynomial with field elements
 func NewPolynomial(coeffs []ff.FieldElement) (p Polynomial) {
 	p = make([]*nt.Integer, len(coeffs))
@@ -301,6 +311,20 @@ func (p Polynomial) GCD(q Polynomial, m *nt.Integer) Polynomial {
 
 }
 
+// Mod reduces a polynomial modulo another polynomial
+func (p Polynomial) Mod(q Polynomial, m *nt.Integer) Polynomial {
+
+	_, rem := p.Div(q, m)
+
+	return rem
+}
+
+// Quo returns the quotient of two polynomials
+func (p Polynomial) Quo(q Polynomial, m *nt.Integer) Polynomial {
+	quo, _ := p.Div(q, m)
+	return quo
+}
+
 // Eval returns p(v) where v is the given big integer
 func (p Polynomial) Eval(x *nt.Integer, m *nt.Integer) (y *nt.Integer) {
 	y = big.NewInt(0)
@@ -316,4 +340,26 @@ func (p Polynomial) Eval(x *nt.Integer, m *nt.Integer) (y *nt.Integer) {
 		}
 	}
 	return y
+}
+
+// Compose returns p(q(x))
+func (p Polynomial) Compose(q Polynomial, m *nt.Integer) Polynomial {
+
+	r := NewPolynomialInts(0)
+
+	other := q.Clone(0)
+
+	for _, coeff := range p.Reverse() {
+		r = other.Mul(r, m).Add(NewPolynomialBigInt(coeff), m)
+	}
+	return r
+}
+
+// Reverse the order of the polynomial coefficients
+func (p Polynomial) Reverse() Polynomial {
+	a := p.Clone(0)
+	for left, right := 0, len(a)-1; left < right; left, right = left+1, right-1 {
+		a[left], a[right] = a[right], a[left]
+	}
+	return a
 }
