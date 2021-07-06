@@ -50,5 +50,6 @@ arbitrary precision arithmetic.
   - Support typed curves (Weirstrass,Edwards)
   - Implement optimized formulas for Weirstrass curves
 - Implement binary fields.
+- Implement number theoretic transform.
 - Implement groups for char 2 fields.
 - Implement pairings.
