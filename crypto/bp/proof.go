@@ -2,7 +2,6 @@ package bp
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"math/big"
 
@@ -73,16 +72,13 @@ func GenInnerProdArg(params *Parameters, G, H []*ec.Point, a, b Vector, u *ec.Po
 	round := 0
 	n := a.Len()
 
-	loglen := int(math.Log2(float64(len(a))))
+	loglen := int(math.Log2(float64(n)))
 
 	challenges := make([]*big.Int, loglen+1)
 	Lvals := make([]*ec.Point, loglen)
 	Rvals := make([]*ec.Point, loglen)
 	var aPrime = NewVector(a)
-	fmt.Println(aPrime.Len())
-
 	var bPrime = NewVector(b)
-	fmt.Println(bPrime.Len())
 
 	// Fiat Shamir transform challenge is the hash value of L,R
 	concat := func(a ...[]byte) []byte {
@@ -94,26 +90,17 @@ func GenInnerProdArg(params *Parameters, G, H []*ec.Point, a, b Vector, u *ec.Po
 		return c
 	}
 	for n > 1 {
-		fmt.Print(aPrime)
-		fmt.Println(bPrime)
 		n = n / 2
 		cL, _ := aPrime[:n].InnerProdMod(bPrime[n:], params.L)
 		cR, _ := aPrime[n:].InnerProdMod(bPrime[:n], params.L)
-
-		fmt.Print(aPrime)
-		fmt.Println(bPrime)
 		// commitment to L
 		comL := DoubleVectorPedersenCommitmentWithGen(params, G[n:], H[:n], aPrime[:n], bPrime[n:])
 		L := params.EC.Add(comL, params.EC.ScalarMul(u, cL))
 
-		fmt.Print(aPrime)
-		fmt.Println(bPrime)
 		// commitment to R
 		comR := DoubleVectorPedersenCommitmentWithGen(params, G[:n], H[n:], aPrime[n:], bPrime[:n])
 		R := params.EC.Add(comR, params.EC.ScalarMul(u, cR))
 
-		fmt.Print(aPrime)
-		fmt.Println(bPrime)
 		Lvals[round] = L
 		Rvals[round] = R
 
@@ -129,22 +116,31 @@ func GenInnerProdArg(params *Parameters, G, H []*ec.Point, a, b Vector, u *ec.Po
 		// generate new round generators
 		G, H, P = GenArgParams(params, G, H, challengeScalar, L, R, P)
 
-		aPrime1, _ := aPrime[:n].ScalarMulMod(challengeScalar, params.L)
-		fmt.Print(aPrime)
-		fmt.Print(aPrime1)
-		aPrime2, _ := aPrime[n:].ScalarMulMod(challengeScalarInv, params.L)
-		fmt.Print(aPrime)
-		fmt.Print(aPrime2)
-		aPrime, _ = aPrime1.Add(aPrime2)
-		fmt.Print(aPrime)
+		aPrime1, err := aPrime[:n].ScalarMulMod(challengeScalar, params.L)
+		if err != nil {
+			panic(err)
+		}
+		aPrime2, err := aPrime[n:].ScalarMulMod(challengeScalarInv, params.L)
+		if err != nil {
+			panic(err)
+		}
 
-		bPrime1, _ := bPrime[:n].ScalarMulMod(challengeScalar, params.L)
-		bPrime2, _ := bPrime[n:].ScalarMulMod(challengeScalarInv, params.L)
-		bPrime, _ = bPrime1.Add(bPrime2)
-		fmt.Print(aPrime)
-		fmt.Println(bPrime)
-
-		fmt.Println(challenges)
+		aPrime, err = aPrime1.Add(aPrime2)
+		if err != nil {
+			panic(err)
+		}
+		bPrime1, err := bPrime[:n].ScalarMulMod(challengeScalar, params.L)
+		if err != nil {
+			panic(err)
+		}
+		bPrime2, err := bPrime[n:].ScalarMulMod(challengeScalarInv, params.L)
+		if err != nil {
+			panic(err)
+		}
+		bPrime, err = bPrime1.Add(bPrime2)
+		if err != nil {
+			panic(err)
+		}
 		round++
 	}
 	return &InnerProdArgument{Lvals, Rvals, aPrime[0], bPrime[0], challenges}
@@ -218,7 +214,7 @@ func VerifyInnerProdArg(params *Parameters, c *nt.Integer, P, u *ec.Point, GVec,
 	uS := params.EC.ScalarMul(u, challengeScalar)
 
 	// proof iterator
-	iter := len(ip.Challenge) - 2
+	iter := len(ip.Challenge) - 1
 
 	if ip.Challenge[iter].Cmp(challengeScalar) != 0 {
 		return false, errors.New("bad challenge scalar")

@@ -3,7 +3,6 @@ package schnorr
 import (
 	"crypto/rand"
 	"crypto/sha256"
-	"fmt"
 
 	"github.com/actuallyachraf/algebra/ec"
 	"github.com/actuallyachraf/algebra/nt"
@@ -97,9 +96,5 @@ func Verify(message []byte, sig Signature, kp Keypair, params Params) bool {
 	sG := params.EC.ScalarMul(&params.Gen, sig.S)
 	Q := params.EC.Add(rP, sG)
 	v := HashToPoint(message, Q)
-	if v.Cmp(sig.R) != 0 {
-		fmt.Println(v, sig.R)
-		return false
-	}
-	return true
+	return v.Cmp(sig.R) == 0
 }

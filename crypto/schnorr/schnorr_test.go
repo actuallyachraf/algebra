@@ -1,7 +1,6 @@
 package schnorr
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/actuallyachraf/algebra/ec"
@@ -46,8 +45,8 @@ func TestSchnorr(t *testing.T) {
 
 		msg := []byte("helloworld")
 		kp := GenerateKeypair(parameters)
-		fmt.Println("Public Key :", kp.P, " | Private Key :", kp.K)
-		fmt.Println("Check Public Key on Curve")
+		t.Log("Public Key :", kp.P, " | Private Key :", kp.K)
+		t.Log("Check Public Key on Curve")
 		if !secp256k1.IsOnCurve(kp.PublicKey.P) {
 			t.Fatal("bad public key for secp256k1")
 		}

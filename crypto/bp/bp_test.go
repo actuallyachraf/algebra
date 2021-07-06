@@ -51,14 +51,14 @@ func TestBulletProofs(t *testing.T) {
 	t.Run("TestInnerProductArgument", func(t *testing.T) {
 		curveParams := GenParametersSecp256k1(64)
 		a := NewVector([]*nt.Integer{nt.FromInt64(1), nt.FromInt64(2), nt.FromInt64(3), nt.FromInt64(4)})
-		b := NewVector([]*nt.Integer{nt.FromInt64(8), nt.FromInt64(7), nt.FromInt64(6), nt.FromInt64(5)})
+		b := NewVector([]*nt.Integer{nt.FromInt64(1), nt.FromInt64(2), nt.FromInt64(3), nt.FromInt64(4)})
 		c, _ := a.InnerProdMod(b, curveParams.L)
 		P := DoubleVectorPedersenCommitment(curveParams, a, b)
 		arg := ProveInnerProdArg(curveParams, a, b, c, P, curveParams.U, curveParams.GVec, curveParams.HVec)
 
 		ok, err := VerifyInnerProdArg(curveParams, c, P, curveParams.U, curveParams.GVec, curveParams.HVec, *arg)
 		if !ok || err != nil {
-			t.Error("failed to verify inner product argument")
+			t.Error("failed to verify inner product argument with error", err)
 		}
 	})
 }
