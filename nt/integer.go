@@ -21,6 +21,11 @@ func Cmp(a, b *Integer) int {
 	return a.Cmp(b)
 }
 
+// Equals checks if two bigints are equal
+func Equal(a, b *Integer) bool {
+	return a.Cmp(b) == 0
+}
+
 // FromInt64 returns an Integer from int64
 func FromInt64(x int64) *Integer {
 	return new(Integer).SetInt64(x)
